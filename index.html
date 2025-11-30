@@ -3,126 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sukyo Big Jar</title>
+  <title>Big Jar</title>
   <style>
     :root { --game-width: 400px; --game-height: 600px; }
-
     html,body {
-      height: 100%;
-      margin: 0;
-      background: #111;
+      height: 100%; margin: 0; background: #111; color: #fff;
       font-family: Inter, Arial, Helvetica, sans-serif;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
-
     /* ---------- Main menu ---------- */
     #menu {
-      text-align: center;
-      width: calc(var(--game-width) + 40px);
-      color: #fff;
+      text-align: center; width: calc(var(--game-width) + 40px);
     }
-    #menu h1 {
-      font-size: 48px;
-      margin: 18px 0 8px;
-      letter-spacing: 1px;
-    }
-    #menu p { margin: 0 0 18px; color: #ddd; }
-    .menuButtons {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
+    #menu h1 { font-size: 48px; margin: 18px 0 8px; letter-spacing: 1px; }
+    #menu .changelog { font-size: 14px; margin: 8px 0; color: #aaa; }
+    .menuButtons { display: flex; gap: 12px; justify-content: center; margin: 16px 0; }
     .menuBtn {
-      background: #fff;
-      color: #111;
-      border: none;
-      padding: 12px 18px;
-      border-radius: 10px;
-      font-weight: 800;
-      cursor: pointer;
-      min-width: 140px;
+      background: #fff; color: #111; border: none; padding: 12px 18px;
+      border-radius: 10px; font-weight: 800; cursor: pointer; min-width: 140px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
-    .menuBtn.secondary {
-      background: #f0f0f0;
-      color: #333;
-      opacity: 0.95;
+    .menuBtn.secondary { background: #f0f0f0; color: #333; }
+    #globalBox {
+      margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 12px 14px; text-align: left;
     }
+    #globalBox h2 { font-size: 16px; margin: 0 0 8px; color: #bbb; }
+    .row { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0; }
+    .label { color: #ddd; font-weight: 700; }
+    .value { color: #fff; font-weight: 800; }
+    .hint { color: #888; font-size: 12px; margin-top: 8px; }
 
     /* ---------- Game container ---------- */
     #gameWrapper {
-      display: none;
-      position: relative;
-      width: calc(var(--game-width) + 40px);
+      display: none; position: relative; width: calc(var(--game-width) + 40px);
     }
 
     #gameArea {
-      position: relative;
-      width: var(--game-width);
-      height: var(--game-height);
+      position: relative; width: var(--game-width); height: var(--game-height);
       background: linear-gradient(180deg,#3f3f3f,#2f2f2f);
-      border-radius: 12px;
-      border: 4px solid #222;
-      overflow: hidden;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-      margin: 0 20px 18px 20px;
+      border-radius: 12px; border: 4px solid #222; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6); margin: 0 20px 18px 20px;
     }
 
     /* scoreboard */
     #scoreboard {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: #fff;
-      color: #000;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-weight: 800;
-      z-index: 300;
-      min-width: 180px;
+      position: absolute; top: 10px; left: 10px; background: #fff; color: #000;
+      padding: 8px 12px; border-radius: 10px; font-weight: 800; z-index: 300; min-width: 180px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
     #bestLabel { margin-top: 6px; font-size: 12px; color: #333; font-weight:700; }
 
     /* overlay messages */
     #overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      background: rgba(200,20,20,0.95);
-      color: #fff;
-      padding: 18px 22px;
-      border-radius: 10px;
-      font-size: 18px;
-      font-weight: 700;
-      text-align: center;
-      display: none;
-      z-index: 500;
-      white-space: pre-line;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(200,20,20,0.95); color: #fff; padding: 18px 22px; border-radius: 10px;
+      font-size: 18px; font-weight: 700; text-align: center; display: none; z-index: 500; white-space: pre-line;
     }
     #overlay button { margin-top: 12px; padding: 8px 12px; border-radius: 6px; border: none; background: #fff; color: #c00; font-weight:700; cursor:pointer; }
 
     /* player */
     #player {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 50px;
-      background-size: cover;
-      background-position: center;
-      z-index: 400;
-      pointer-events: none;
-      border-radius: 6px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-      background-color: #ffd; /* fallback visible color */
-      border: 2px solid rgba(0,0,0,0.18);
+      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+      width: 50px; height: 50px; background-size: cover; background-position: center; z-index: 400;
+      pointer-events: none; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      background-color: #ffd; border: 2px solid rgba(0,0,0,0.18);
     }
 
     /* objects */
@@ -134,14 +79,8 @@
 
     /* controls panel (bottom-right) */
     #controlsPanel {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-      z-index: 600;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: flex-end;
+      position: absolute; right: 10px; bottom: 10px; z-index: 600;
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
     }
     #modeSelectWrap { background:#fff;color:#000;padding:6px 10px;border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:flex; gap:8px; align-items:center; }
     #modeSelect { font-weight:800; padding:4px 6px; border-radius:6px; border:1px solid #ccc; background:#f3f3f3; cursor:pointer; }
@@ -151,18 +90,9 @@
 
     /* back to menu button */
     #backToMenu {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 600;
-      background: #fff;
-      color: #000;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-weight: 800;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      position: absolute; top: 10px; right: 10px; z-index: 600;
+      background: #fff; color: #000; padding: 6px 10px; border-radius: 8px; font-weight: 800;
+      border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
 
     /* small responsive */
@@ -176,12 +106,25 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p>Changelogs: 2025-11-28 14:26 | Added new gamemodes</p>
+    <p class="changelog">Changelogs: 2025-11-29 @6:25 PM Added 2 More Levels, Level System Tweaks, Bug Fixes, Global Leaderboard + more!</p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
-      <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
+      <button class="menuBtn secondary" id="playEscape">Hitlar Madness (No multipliers)</button>
     </div>
-    <div style="color:#bbb;font-size:13px;">Tip: Use your mouse or switch to Mobile mode for a slider control.</div>
+
+    <!-- Global highscores (Firestore) -->
+    <div id="globalBox">
+      <h2>Global highscores</h2>
+      <div class="row">
+        <div class="label">Original</div>
+        <div class="value" id="globalOriginal">Loading…</div>
+      </div>
+      <div class="row">
+        <div class="label">Hitlar Madness</div>
+        <div class="value" id="globalEscape">Loading…</div>
+      </div>
+      <div class="hint">Scores are shared across all players.</div>
+    </div>
   </div>
 
   <!-- Game -->
@@ -189,11 +132,10 @@
     <div id="gameArea" aria-label="Game area">
       <div id="scoreboard">
         💰 Total: <div id="totalDisplay" style="display:inline-block;">$0.00</div>
-        <div id="bestLabel">Best: $0.00</div>
+        <div id="bestLabel">Best (local): $0.00</div>
       </div>
 
       <div id="overlay" role="dialog" aria-hidden="true"></div>
-
       <div id="player" aria-hidden="false"></div>
 
       <button id="backToMenu">Back to Menu</button>
@@ -214,33 +156,28 @@
     </div>
   </div>
 
-  <script>
-    /************************************************************************
-     * Big Jar — Original & Escape modes (coins scattered, more coins)
-     *
-     * Changes in this version:
-     * - Extra coins are spawned at random X positions across the play area
-     *   (no tight clustering around a single spawnX).
-     * - Escape mode spawns significantly more coins overall and scatters them.
-     * - Original mode keeps multipliers; Escape mode disables multipliers.
-     * - Escape mode uses a higher speed cap (300) and slightly faster speed scaling.
-     ************************************************************************/
+  <!-- Firebase + Firestore (modular v10 CDN) -->
+  <script type="module">
+    /* ----------------- Firebase setup ----------------- */
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAnalytics }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    /* ----------------- Assets & thresholds ----------------- */
-    const IMG_DEFAULT = 'https://www.pngkey.com/png/detail/327-3272410_jews-laughing-meme-png-jews-laughing-meme-evil.png';
-    const IMG_LEVEL1 = IMG_DEFAULT;
-    const IMG_LEVEL2 = 'https://i.ibb.co/8nB2KQ2H/IMG-6412.jpg';
-    const IMG_LEVEL3 = 'https://i.ibb.co/vCmPP120/drewmak.png';
-    const IMG_LEVEL4 = 'https://i.ibb.co/7tb6LFcx/20250910-1057582.jpg';
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVGdjFlOMxUSxsL1RaLKfb1xvJAVTD8_k",
+      authDomain: "hitlar-42703.firebaseapp.com",
+      projectId: "hitlar-42703",
+      storageBucket: "hitlar-42703.firebasestorage.app",
+      messagingSenderId: "34782363612",
+      appId: "1:34782363612:web:4e1d4b4d125c8514001919",
+      measurementId: "G-JPXX3C34M9"
+    };
 
-    const LEVEL1_THRESHOLD = 50;
-    const LEVEL2_THRESHOLD = 100;
-    const LEVEL3_THRESHOLD = 170;
-    const LEVEL4_THRESHOLD = 350;
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
 
-    const BEST_KEY = 'bigjar_best_v1';
-
-    /* ----------------- DOM ----------------- */
+    /* ----------------- DOM refs ----------------- */
     const menuEl = document.getElementById('menu');
     const gameWrapper = document.getElementById('gameWrapper');
     const gameArea = document.getElementById('gameArea');
@@ -257,24 +194,94 @@
     const playOriginalBtn = document.getElementById('playOriginal');
     const playEscapeBtn = document.getElementById('playEscape');
 
+    // Global menu highscores
+    const globalOriginalEl = document.getElementById("globalOriginal");
+    const globalEscapeEl   = document.getElementById("globalEscape");
+
+    /* ----------------- Assets & thresholds ----------------- */
+    const IMG_DEFAULT = 'https://www.pngkey.com/png/detail/327-3272410_jews-laughing-meme-png-jews-laughing-meme-evil.png';
+    const IMG_LEVEL1 = 'https://i.ibb.co/QjbNhZMh/kirk.webp';
+    const IMG_LEVEL2 = 'https://i.ibb.co/8nB2KQ2H/IMG-6412.jpg';
+    const IMG_LEVEL3 = 'https://i.ibb.co/vCmPP120/drewmak.png';
+    const IMG_LEVEL4 = 'https://i.ibb.co/7tb6LFcx/20250910-1057582.jpg';
+    const IMG_LEVEL5 = 'https://i.ibb.co/TDj7hWFm/saultys.png';
+    const IMG_LEVEL6 = 'https://i.ibb.co/VYkHdCZL/drewmakkirked.png';
+
+    const LEVEL1_THRESHOLD = 500;
+    const LEVEL2_THRESHOLD = 1000;
+    const LEVEL3_THRESHOLD = 5000;
+    const LEVEL4_THRESHOLD = 10000;
+    const LEVEL5_THRESHOLD = 100000;   // new: level 5 requirement 100,000+
+    const LEVEL6_THRESHOLD = 1000000;  // new: level 6 requirement 1,000,000+
+
+    // Mode-specific local highscores (per device)
+    const LOCAL_BEST_PREFIX = 'bigjar_best';
+
     /* ----------------- Game state ----------------- */
     let total = 0;
-    let best = parseFloat(localStorage.getItem(BEST_KEY)) || 0;
+    let best = 0;              // local best per mode
     let gameOver = false;
     let currentLevel = 0;
+    let currentMode = 'original'; // 'original' or 'escape'
 
-    // mode: 'original' or 'escape'
-    let currentMode = 'original';
-
-    // timers & intervals tracking so we can clear them on stop
+    // timers & intervals tracking for cleanup
     let spawnTimeoutId = null;
-    const activeIntervals = new Set(); // store interval IDs from startFall
-    const activeElements = new Set(); // DOM elements created (for cleanup)
+    const activeIntervals = new Set();
+    const activeElements = new Set();
 
     // movement
     let controlMode = 'desktop'; // 'desktop' or 'mobile'
     let targetX = 0;
     let playerX = 0;
+
+    /* ----------------- Firestore global highscores ----------------- */
+    // highscores collection with documents "original" and "escape"
+    async function loadGlobalHighscores() {
+      try {
+        const originalSnap = await getDoc(doc(db, "highscores", "original"));
+        const escapeSnap   = await getDoc(doc(db, "highscores", "escape"));
+
+        const originalBest = originalSnap.exists() ? Number(originalSnap.data().best) : null;
+        const escapeBest   = escapeSnap.exists() ? Number(escapeSnap.data().best)   : null;
+
+        globalOriginalEl.textContent = originalBest != null ? `$${originalBest.toFixed(2)}` : "No score yet";
+        globalEscapeEl.textContent   = escapeBest != null   ? `$${escapeBest.toFixed(2)}`   : "No score yet";
+      } catch (err) {
+        console.error("Failed to load global highscores:", err);
+        globalOriginalEl.textContent = "Error";
+        globalEscapeEl.textContent = "Error";
+      }
+    }
+
+    async function updateGlobalHighscore(mode, score) {
+      try {
+        const ref = doc(db, "highscores", mode === "escape" ? "escape" : "original");
+        const snap = await getDoc(ref);
+        const currentBest = snap.exists() ? Number(snap.data().best) : null;
+
+        if (currentBest == null || score > currentBest) {
+          await setDoc(ref, { best: Number(score) });
+          // Reflect immediately in the menu
+          if (mode === 'original') globalOriginalEl.textContent = `$${Number(score).toFixed(2)}`;
+          else globalEscapeEl.textContent = `$${Number(score).toFixed(2)}`;
+        }
+      } catch (err) {
+        console.error("Failed to update global highscore:", err);
+      }
+    }
+
+    /* ----------------- Local best per mode ----------------- */
+    function bestKeyForMode(mode) {
+      return `${LOCAL_BEST_PREFIX}_${mode === 'escape' ? 'escape' : 'original'}`;
+    }
+    function loadLocalBest(mode) {
+      const raw = localStorage.getItem(bestKeyForMode(mode));
+      const val = parseFloat(raw);
+      return Number.isFinite(val) ? val : 0;
+    }
+    function saveLocalBest(mode, value) {
+      localStorage.setItem(bestKeyForMode(mode), Number(value).toFixed(2));
+    }
 
     /* ----------------- Helpers ----------------- */
     function setPlayerImageForLevel(level) {
@@ -283,9 +290,10 @@
       else if (level === 2) playerEl.style.backgroundImage = `url('${IMG_LEVEL2}')`;
       else if (level === 1) playerEl.style.backgroundImage = `url('${IMG_LEVEL1}')`;
       else playerEl.style.backgroundImage = `url('${IMG_DEFAULT}')`;
+      if (level === 6) playerEl.style.backgroundImage = `url('${IMG_LEVEL6}')`;
+      else if (level === 5) playerEl.style.backgroundImage = `url('${IMG_LEVEL5}')`;
     }
 
-    // effective scaling cap depends on mode
     function effectiveForScaling() {
       const cap = (currentMode === 'escape') ? 300 : 120;
       return Math.min(total, cap);
@@ -295,9 +303,9 @@
       totalDisplay.textContent = `$${total.toFixed(2)}`;
       if (total > best) {
         best = parseFloat(total.toFixed(2));
-        localStorage.setItem(BEST_KEY, best.toFixed(2));
+        saveLocalBest(currentMode, best);
       }
-      bestLabel.textContent = `Best: $${best.toFixed(2)}`;
+      bestLabel.textContent = `Best (local): $${best.toFixed(2)}`;
       checkLevelChange();
     }
 
@@ -340,7 +348,9 @@
 
     function checkLevelChange() {
       const prev = currentLevel;
-      if (total > LEVEL4_THRESHOLD) currentLevel = 4;
+      if (total > LEVEL6_THRESHOLD) currentLevel = 6;
+      else if (total > LEVEL5_THRESHOLD) currentLevel = 5;
+      else if (total > LEVEL4_THRESHOLD) currentLevel = 4;
       else if (total > LEVEL3_THRESHOLD) currentLevel = 3;
       else if (total > LEVEL2_THRESHOLD) currentLevel = 2;
       else if (total > LEVEL1_THRESHOLD) currentLevel = 1;
@@ -351,6 +361,8 @@
         else if (currentLevel === 2) showLevelText('Level Up: Super Drew Mak');
         else if (currentLevel === 3) showLevelText('Level Up: Ultra Drew Mak');
         else if (currentLevel === 4) showLevelText('Level Up: Legendary Drew Mak');
+        else if (currentLevel === 5) showLevelText('Level Up: Mythic Drew Mak');
+        else if (currentLevel === 6) showLevelText('Level Up: Cosmic Drew Mak');
       }
       setPlayerImageForLevel(currentLevel);
     }
@@ -384,28 +396,23 @@
       requestAnimationFrame(updatePlayerLoop);
     }
 
-    /* ----------------- Spawning & falling (scattered coins) ----------------- */
-    // spawn interval: escape mode spawns more often and speeds up faster
+    /* ----------------- Spawning & falling ----------------- */
     function getSpawnIntervalMs() {
       const base = 700;
       const effective = effectiveForScaling();
       if (currentMode === 'escape') {
-        // faster acceleration in escape mode: divide by 600, cap 60% reduction
         const reduction = Math.min(effective / 600, 0.6);
         return Math.max(120, base * (1 - reduction));
       } else {
-        // original gentler scaling
         const reduction = Math.min(effective / 800, 0.5);
-        return Math.max(160, base * (1 - reduction));
+        // spawn a bit less often in original mode (higher minimum)
+        return Math.max(180, base * (1 - reduction));
       }
     }
 
-    // enemy chance: escape mode has significantly more coins => lower enemy chance,
-    // but increases faster with effective value
     function getEnemyChance() {
       if (currentMode === 'escape') {
-        // base enemy chance lower (more coins), but scales faster with effective
-        let chance = 0.18 + (effectiveForScaling() / 180); // starts low, grows faster
+        let chance = 0.18 + (effectiveForScaling() / 180);
         if (chance > 0.9) chance = 0.9;
         return chance;
       } else {
@@ -415,9 +422,8 @@
       }
     }
 
-    // multiplier chance only applies in original mode
     function getMultiplierChance() {
-      if (currentMode === 'escape') return 0; // no multipliers in escape
+      if (currentMode === 'escape') return 0;
       return Math.min(0.12 + (effectiveForScaling() / 240), 0.5);
     }
 
@@ -429,12 +435,10 @@
       return Math.random() * (gameArea.offsetWidth - width);
     }
 
-    // Create a coin element at a random X (scattered) with optional top offset
     function createScatteredCoin(topOffset = -20) {
       const c = document.createElement('div');
       c.className = 'coin';
       const left = Math.random() * (gameArea.offsetWidth - 30);
-      // randomize top so coins don't all start at the exact same Y
       const top = topOffset - Math.random() * 120;
       c.style.left = `${Math.max(0, Math.min(gameArea.offsetWidth - 30, left))}px`;
       c.style.top = `${top}px`;
@@ -446,7 +450,6 @@
     function spawnObject() {
       if (gameOver) return;
 
-      // big enemy chance (same behavior across modes)
       const bigEnemyChance = 0.03 + Math.min(effectiveForScaling() / 5000, 0.07);
       if (Math.random() < bigEnemyChance) {
         const spawnX = decideSpawnX(true, 140);
@@ -457,7 +460,6 @@
         gameArea.appendChild(big);
         activeElements.add(big);
 
-        // x5 reward only in original mode
         if (currentMode === 'original') {
           const x5 = document.createElement('div');
           x5.className = 'x5Coin';
@@ -473,26 +475,19 @@
         return;
       }
 
-      // normal spawn
       const enemyChance = getEnemyChance();
       const isEnemy = Math.random() < enemyChance;
 
-      // In escape mode we want many more coins and they should be scattered.
-      // We'll still occasionally spawn enemies, but coins will be spawned in larger numbers
-      // and at random X positions across the playfield.
       if (currentMode === 'escape') {
-        // spawn a cluster of scattered coins (but not clustered tightly)
-        // base extra coins increases with effective scaling
         const effective = effectiveForScaling();
-        const baseExtra = 3; // always spawn at least 3 coins per tick in escape
-        const scaleExtra = Math.floor(effective / 80); // +1 per 80 effective
-        const extraCount = baseExtra + scaleExtra + Math.floor(Math.random() * 2); // small randomness
+        const baseExtra = 4;
+        const scaleExtra = Math.floor(effective / 60);
+        const extraCount = baseExtra + scaleExtra + Math.floor(Math.random() * 3);
 
         for (let i = 0; i < extraCount; i++) {
-          createScatteredCoin(-10 - Math.random() * 80);
+          createScatteredCoin(-10 - Math.random() * 120);
         }
 
-        // occasionally spawn an enemy instead of coins
         if (isEnemy) {
           const spawnX = decideSpawnX(true, 60);
           const el = document.createElement('div');
@@ -504,7 +499,6 @@
           startFall(el, 'enemy');
         }
       } else {
-        // original mode: spawn a single coin or enemy, with occasional multiplier near enemies
         const spawnX = decideSpawnX(isEnemy, isEnemy ? 60 : 30);
         const el = document.createElement('div');
         el.style.left = spawnX + 'px';
@@ -513,7 +507,7 @@
         gameArea.appendChild(el);
         activeElements.add(el);
 
-        // multiplier coin: only in original mode and more often there
+        // If this spawned an enemy, keep existing multiplier possibility
         if (isEnemy && Math.random() < getMultiplierChance()) {
           const m = document.createElement('div');
           m.className = 'multiplierCoin';
@@ -522,6 +516,35 @@
           gameArea.appendChild(m);
           activeElements.add(m);
           startFall(m, 'multiplier');
+        }
+
+        // MORE: In original mode, spawn more extra coins and spread them out
+        if (!isEnemy) {
+          // spawn fewer extras but spread them out more
+          const extraCount = 1 + Math.floor(Math.random() * 3); // 1..3 extra coins
+          const spread = 200; // wider horizontal spread radius in px
+          for (let i = 0; i < extraCount; i++) {
+            const c = document.createElement('div');
+            c.className = 'coin';
+            const offset = (Math.random() * (spread * 2)) - spread; // -spread..+spread
+            const left = Math.max(0, Math.min(gameArea.offsetWidth - 30, spawnX + offset));
+            c.style.left = left + 'px';
+            // start higher / more varied vertically for greater scatter
+            c.style.top = (-30 - Math.random() * 240) + 'px';
+            // slight size variation for visual variety
+            const scale = 0.85 + Math.random() * 0.5;
+            c.style.width = `${30 * scale}px`;
+            c.style.height = `${30 * scale}px`;
+            c.style.borderRadius = `${50 * scale}%`;
+            gameArea.appendChild(c);
+            activeElements.add(c);
+            startFall(c, 'coin');
+          }
+          // less frequent clusters
+          if (Math.random() < 0.12) {
+            const clusterCount = 2 + Math.floor(Math.random() * 3);
+            for (let k = 0; k < clusterCount; k++) createScatteredCoin(-60 - Math.random() * 220);
+          }
         }
 
         startFall(el, isEnemy ? 'enemy' : 'coin');
@@ -534,7 +557,6 @@
       spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
     }
 
-    // startFall uses setInterval; we store interval IDs to clear them on stop
     function startFall(el, type = '') {
       const tickMs = 30;
       const intervalId = setInterval(() => {
@@ -548,8 +570,6 @@
 
         const currentTop = parseFloat(el.style.top) || 0;
         const effective = effectiveForScaling();
-
-        // speed scaling: escape mode increases slightly faster (smaller divisor)
         const speed = (currentMode === 'escape') ? (3.5 + effective / 10) : (3 + effective / 12);
         el.style.top = (currentTop + speed) + 'px';
 
@@ -568,7 +588,6 @@
             total = parseFloat((total + value).toFixed(2));
             updateUI();
           } else if (type === 'multiplier') {
-            // only possible in original mode
             const multiplier = parseFloat((Math.random() * 0.4 + 1.1).toFixed(2));
             total = parseFloat((total * multiplier).toFixed(2));
             showOverlay(`✨ Multiplied by x${multiplier.toFixed(2)}`);
@@ -576,9 +595,11 @@
           } else if (type === 'enemy') {
             if (total < 4) {
               const collectedAtDeath = total;
-              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest: $${best.toFixed(2)}`, true, true);
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
+              // Update global highscore
+              updateGlobalHighscore(currentMode, collectedAtDeath);
             } else {
               total = parseFloat((total * 0.7).toFixed(2));
               showOverlay('❌ Enemy hit! Total reduced to 70%');
@@ -588,11 +609,11 @@
             const collectedAtDeath = total;
             total = 0;
             updateUI();
-            showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest: $${best.toFixed(2)}`, true, true);
+            showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             gameOver = true;
             stopSpawnAndIntervals();
+            updateGlobalHighscore(currentMode, collectedAtDeath);
           } else if (type === 'x5') {
-            // x5 only in original mode
             total = parseFloat((total * 5).toFixed(2));
             showOverlay('💥 x5 Collected!');
             updateUI();
@@ -605,7 +626,6 @@
           return;
         }
 
-        // remove if off-screen
         if (currentTop > gameArea.offsetHeight + 200) {
           if (el.parentElement) el.remove();
           clearInterval(intervalId);
@@ -650,7 +670,7 @@
       total = 0;
       currentLevel = 0;
       gameOver = false;
-      best = parseFloat(localStorage.getItem(BEST_KEY)) || 0;
+      best = loadLocalBest(currentMode); // load mode-specific local best
       updateUI();
       setPlayerImageForLevel(0);
       initPlayerPosition();
@@ -658,7 +678,6 @@
     }
 
     function startGame(mode) {
-      // mode: 'original' or 'escape'
       currentMode = mode === 'escape' ? 'escape' : 'original';
       menuEl.style.display = 'none';
       gameWrapper.style.display = 'block';
@@ -666,7 +685,6 @@
 
       resetGameState();
 
-      // control mode UI
       controlMode = modeSelect.value || 'desktop';
       if (controlMode === 'mobile') {
         mobileSliderWrap.style.display = 'block';
@@ -676,10 +694,7 @@
         mobileSliderWrap.style.display = 'none';
       }
 
-      // attach mouse listener for desktop mode
       document.addEventListener('mousemove', onMouseMove);
-
-      // start loops
       requestAnimationFrame(updatePlayerLoop);
       spawnLoop();
     }
@@ -688,13 +703,28 @@
     playOriginalBtn.addEventListener('click', () => startGame('original'));
     playEscapeBtn.addEventListener('click', () => startGame('escape'));
 
-    backToMenuBtn.addEventListener('click', () => {
-      // pause and reset, then show menu
-      stopGame();
-      resetGameState();
-      gameWrapper.style.display = 'none';
-      menuEl.style.display = 'block';
-      menuEl.scrollIntoView({behavior:'smooth'});
+    backToMenuBtn.addEventListener('click', async () => {
+      try {
+        // If player has a score from this run, persist it locally and try to update global highscore
+        if (total > 0) {
+          if (total > best) {
+            saveLocalBest(currentMode, total);
+            best = total;
+          }
+          // best-effort but awaited so menu shows updated global value when we reload highscores
+          try { await updateGlobalHighscore(currentMode, total); } catch (e) { console.warn('Global update on back-to-menu failed', e); }
+        }
+      } catch (err) {
+        console.error('Error saving on back to menu:', err);
+      } finally {
+        stopGame();
+        resetGameState();
+        gameWrapper.style.display = 'none';
+        menuEl.style.display = 'block';
+        menuEl.scrollIntoView({behavior:'smooth'});
+        // Refresh global highscores when returning
+        loadGlobalHighscores();
+      }
     });
 
     modeSelect.addEventListener('change', () => {
@@ -711,16 +741,16 @@
     /* ----------------- Init ----------------- */
     setPlayerImageForLevel(0);
     initPlayerPosition();
+    best = loadLocalBest('original');
     updateUI();
     requestAnimationFrame(updatePlayerLoop);
 
-    // expose restart for overlay button
-    window.restartGame = () => {
-      stopGame();
-      startGame(currentMode);
-    };
+    // Load global highscores on menu
+    loadGlobalHighscores();
+
+    // Expose (optional)
+    window.updateGlobalHighscore = updateGlobalHighscore;
+    window.loadGlobalHighscores = loadGlobalHighscores;
   </script>
 </body>
 </html>
-
-
