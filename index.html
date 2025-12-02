@@ -106,10 +106,10 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2025-11-29 @6:25 PM Added 2 More Levels, Level System Tweaks, Bug Fixes, Global Leaderboard + more!</p>
+    <p class="changelog">Changelogs: 2025-12-01 @4:47 PM: Fixed Global Leaderboard for IGRY Mode </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
-      <button class="menuBtn secondary" id="playEscape">Hitlar Madness (No multipliers)</button>
+      <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
     </div>
 
     <!-- Global highscores (Firestore) -->
@@ -120,7 +120,7 @@
         <div class="value" id="globalOriginal">Loading…</div>
       </div>
       <div class="row">
-        <div class="label">Hitlar Madness</div>
+        <div class="label">IGRY Mode</div>
         <div class="value" id="globalEscape">Loading…</div>
       </div>
       <div class="hint">Scores are shared across all players.</div>
@@ -236,6 +236,10 @@
 
     /* ----------------- Firestore global highscores ----------------- */
     // highscores collection with documents "original" and "escape"
+    // cached global bests for in-run detection (so we can proactively update when player beats them)
+    const cachedGlobalBest = { original: null, escape: null };
+    const pendingGlobalUpdate = { original: false, escape: false };
+
     async function loadGlobalHighscores() {
       try {
         const originalSnap = await getDoc(doc(db, "highscores", "original"));
@@ -246,6 +250,10 @@
 
         globalOriginalEl.textContent = originalBest != null ? `$${originalBest.toFixed(2)}` : "No score yet";
         globalEscapeEl.textContent   = escapeBest != null   ? `$${escapeBest.toFixed(2)}`   : "No score yet";
+
+        // cache for in-run detection
+        cachedGlobalBest.original = originalBest;
+        cachedGlobalBest.escape = escapeBest;
       } catch (err) {
         console.error("Failed to load global highscores:", err);
         globalOriginalEl.textContent = "Error";
@@ -253,6 +261,7 @@
       }
     }
 
+    // returns true if a write actually happened (global highscore updated)
     async function updateGlobalHighscore(mode, score) {
       try {
         const ref = doc(db, "highscores", mode === "escape" ? "escape" : "original");
@@ -264,9 +273,14 @@
           // Reflect immediately in the menu
           if (mode === 'original') globalOriginalEl.textContent = `$${Number(score).toFixed(2)}`;
           else globalEscapeEl.textContent = `$${Number(score).toFixed(2)}`;
+          // update cache
+          cachedGlobalBest[mode === 'escape' ? 'escape' : 'original'] = Number(score);
+          return true;
         }
+        return false;
       } catch (err) {
         console.error("Failed to update global highscore:", err);
+        return false;
       }
     }
 
@@ -307,6 +321,23 @@
       }
       bestLabel.textContent = `Best (local): $${best.toFixed(2)}`;
       checkLevelChange();
+      // detect if the running total beats the cached global best for the current mode
+      try {
+        const key = currentMode === 'escape' ? 'escape' : 'original';
+        const cached = cachedGlobalBest[key];
+        if (!pendingGlobalUpdate[key] && (cached === null || total > cached)) {
+          // mark pending to avoid duplicate writes
+          pendingGlobalUpdate[key] = true;
+          updateGlobalHighscore(currentMode, total)
+            .then((didWrite) => {
+              if (didWrite) cachedGlobalBest[key] = total;
+            })
+            .catch((e) => console.warn('In-run global update failed', e))
+            .finally(() => { pendingGlobalUpdate[key] = false; });
+        }
+      } catch (e) {
+        console.warn('Error checking in-run global beat:', e);
+      }
     }
 
     function showOverlay(text, withButton = false, persistent = false) {
@@ -559,7 +590,7 @@
 
     function startFall(el, type = '') {
       const tickMs = 30;
-      const intervalId = setInterval(() => {
+      const intervalId = setInterval(async () => {
         if (gameOver) {
           if (el.parentElement) el.remove();
           clearInterval(intervalId);
@@ -598,8 +629,8 @@
               showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
-              // Update global highscore
-              updateGlobalHighscore(currentMode, collectedAtDeath);
+              // Update global highscore (await so the write is attempted)
+              try { await updateGlobalHighscore(currentMode, collectedAtDeath); } catch (e) { console.warn('Global update on death (enemy) failed', e); }
             } else {
               total = parseFloat((total * 0.7).toFixed(2));
               showOverlay('❌ Enemy hit! Total reduced to 70%');
@@ -612,7 +643,7 @@
             showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             gameOver = true;
             stopSpawnAndIntervals();
-            updateGlobalHighscore(currentMode, collectedAtDeath);
+            try { await updateGlobalHighscore(currentMode, collectedAtDeath); } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
           } else if (type === 'x5') {
             total = parseFloat((total * 5).toFixed(2));
             showOverlay('💥 x5 Collected!');
@@ -675,6 +706,9 @@
       setPlayerImageForLevel(0);
       initPlayerPosition();
       overlay.style.display = 'none';
+      // clear pending flag for this mode on reset
+      const mk = currentMode === 'escape' ? 'escape' : 'original';
+      pendingGlobalUpdate[mk] = false;
     }
 
     function startGame(mode) {
