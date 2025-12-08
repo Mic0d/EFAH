@@ -122,7 +122,7 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2025-12-02 @9:50 PM: Added New Gamemode </p>
+    <p class="changelog">Changelogs: 2025-12-07 @11:05 PM: Update Part 1: Added background music and sound for Level 5. </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -141,7 +141,7 @@
         <div class="value" id="globalEscape">Loading…</div>
       </div>
       <div class="row">
-        <div class="label">Gas Chambers</div>
+        <div class="label">Escape the Gas Chambers</div>
         <div class="value" id="globalGuilo">Loading…</div>
       </div>
       <div class="hint">Scores are shared across all players.</div>
@@ -182,6 +182,8 @@
         </div>
       </div>
     </div>
+    <audio id="level5Sound" src="https://www.dropbox.com/scl/fi/jctlk81ahgqj1kjzhmudo/20240826_162113_Normal.m4a?rlkey=m4jl220rn4vllphoyqkcvcnxx&st=f6abz5at&dl=1"></audio>
+    <audio id="backgroundMusic" src="https://www.dropbox.com/scl/fi/xlw2o61mygmu266weyp6j/1207.MP3?rlkey=6beigh8cy7kech6ys6vokjmcj&st=a5ohqaml&dl=1" loop></audio>
   </div>
 
   <!-- Firebase + Firestore (modular v10 CDN) -->
@@ -231,6 +233,8 @@
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
     const breathBarFill = document.getElementById('breathBarFill');
+    const level5Sound = document.getElementById('level5Sound');
+    const backgroundMusic = document.getElementById('backgroundMusic');
 
     /* ----------------- Assets & thresholds ----------------- */
     const IMG_DEFAULT = 'https://www.pngkey.com/png/detail/327-3272410_jews-laughing-meme-png-jews-laughing-meme-evil.png';
@@ -442,7 +446,11 @@
         else if (currentLevel === 2) showLevelText('Level Up: Super Drew Mak');
         else if (currentLevel === 3) showLevelText('Level Up: Ultra Drew Mak');
         else if (currentLevel === 4) showLevelText('Level Up: Legendary Drew Mak');
-        else if (currentLevel === 5) showLevelText('Level Up: Mythic Drew Mak');
+        else if (currentLevel === 5) {
+          showLevelText('Level Up: Mythic Drew Mak');
+          level5Sound.currentTime = 0;
+          level5Sound.play().catch(e => console.warn('Failed to play Level 5 sound:', e));
+        }
         else if (currentLevel === 6) showLevelText('Level Up: Cosmic Drew Mak');
       }
       setPlayerImageForLevel(currentLevel);
@@ -795,6 +803,8 @@
       stopSpawnAndIntervals();
       overlay.style.display = 'none';
       document.removeEventListener('mousemove', onMouseMove);
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
     }
 
     function resetGameState() {
@@ -811,6 +821,8 @@
       overlay.style.display = 'none';
       const mk = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : 'original');
       pendingGlobalUpdate[mk] = false;
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
     }
 
     function startGame(mode) {
@@ -826,6 +838,12 @@
         breathBarContainer.style.display = 'block';
       } else {
         breathBarContainer.style.display = 'none';
+      }
+
+      // Play background music only in Original mode
+      if (currentMode === 'original') {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play().catch(e => console.warn('Failed to play background music:', e));
       }
 
       controlMode = modeSelect.value || 'desktop';
@@ -861,6 +879,11 @@
         activeIntervals.add(breathDecayInterval);
       }
 
+      // Play background music for Original mode
+      if (currentMode === 'original') {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play().catch(e => console.warn('Failed to play background music:', e));
+      }
       spawnLoop();
     }
 
