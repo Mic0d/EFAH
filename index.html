@@ -24,7 +24,9 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
     .menuBtn.secondary { background: #f0f0f0; color: #333; }
-    .menuBtn.tertiary { background: #l; color: #fff; }
+    .menuBtn.tertiary { background: #4a9eff; color: #fff; }
+    /* Ensure Escape (IGRY) button text is always black */
+    #playEscape { color: #000 !important; }
     #globalBox {
       margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
       padding: 12px 14px; text-align: left;
@@ -122,11 +124,11 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2025-12-07 @4:47 PM: Fixed Global Leaderboard for IGRY Mode </p>
+    <p class="changelog">Changelogs: 2026-02-18 @1:28 PM: Fixed Global Leaderboard </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
-      <button class="menuBtn tertiary" id="playGuilo">Escape from being gassed</button>
+      <button class="menuBtn tertiary" id="playGuilo">Escape</button>
     </div>
 
     <!-- Global highscores (Firestore) -->
