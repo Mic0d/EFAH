@@ -103,8 +103,29 @@
     #modeSelectWrap { background:#fff;color:#000;padding:6px 10px;border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:flex; gap:8px; align-items:center; }
     #modeSelect { font-weight:800; padding:4px 6px; border-radius:6px; border:1px solid #ccc; background:#f3f3f3; cursor:pointer; }
     #mobileSliderWrap { background:#fff;color:#000;padding:8px 10px;border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:none; width:220px; }
-    #mobileSliderWrap span { display:block; font-size:12px; color:#333; margin-bottom:6px; font-weight:700; }
-    #mobileSlider { width:100%; }
+    /* centered variant used when mobile control mode is active */
+    #mobileSliderWrap.centered {
+      position: fixed;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+      width: max-content;          /* box will size to content (the slider) */
+      padding: 6px 10px;          /* small padding around the slider */
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1100;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+      pointer-events: auto;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    /* ensure the input has a consistent width when centered so the white box matches it */
+    #mobileSliderWrap.centered #mobileSlider {
+      width: 240px;
+      max-width: 86vw;
+    }
 
     /* back to menu button */
     #backToMenu {
@@ -124,7 +145,7 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2026-02-18 @1:28 PM: Fixed Global Leaderboard </p>
+    <p class="changelog">Changelogs: 2026-02-18 @1:28 PM: Fixed Global Leaderboard, centered slider controls + enhanced sliders </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -825,6 +846,8 @@
       pendingGlobalUpdate[mk] = false;
       backgroundMusic.pause();
       backgroundMusic.currentTime = 0;
+      // Ensure mobile slider is not left centered after reset
+      mobileSliderWrap.classList.remove('centered');
     }
 
     function startGame(mode) {
@@ -851,10 +874,12 @@
       controlMode = modeSelect.value || 'desktop';
       if (controlMode === 'mobile') {
         mobileSliderWrap.style.display = 'block';
+        mobileSliderWrap.classList.add('centered');
         const percent = playerX / (gameArea.offsetWidth - 50);
         mobileSlider.value = Math.round(percent * 100);
       } else {
         mobileSliderWrap.style.display = 'none';
+        mobileSliderWrap.classList.remove('centered');
       }
 
       document.addEventListener('mousemove', onMouseMove);
@@ -919,10 +944,12 @@
       controlMode = modeSelect.value;
       if (controlMode === 'mobile') {
         mobileSliderWrap.style.display = 'block';
+        mobileSliderWrap.classList.add('centered');
         const percent = playerX / (gameArea.offsetWidth - 50);
         mobileSlider.value = Math.round(percent * 100);
       } else {
         mobileSliderWrap.style.display = 'none';
+        mobileSliderWrap.classList.remove('centered');
       }
     });
 
