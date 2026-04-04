@@ -31,7 +31,12 @@
       margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
       padding: 12px 14px; text-align: left;
     }
-    #globalBox h2 { font-size: 16px; margin: 0 0 8px; color: #bbb; }
+    #dailyBox {
+      margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 12px 14px; text-align: left;
+    }
+    #globalBox h2,
+    #dailyBox h2 { font-size: 16px; margin: 0 0 8px; color: #bbb; }
     .row { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0; }
     .label { color: #ddd; font-weight: 700; }
     .value { color: #fff; font-weight: 800; }
@@ -145,7 +150,7 @@
   <!-- Main Menu -->
   <div id="menu">
     <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2026-02-18 @1:28 PM: Fixed Global Leaderboard, centered slider controls + enhanced sliders </p>
+    <p class="changelog">Changelogs: 2026-04-04 @12:40 PM: Fixed Global Leaderboard, New Daily Global Leaderboard For Original Mode </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -168,6 +173,12 @@
         <div class="value" id="globalGuilo">Loading…</div>
       </div>
       <div class="hint">Scores are shared across all players.</div>
+    </div>
+
+    <div id="dailyBox">
+      <h2>Daily Original leaderboard</h2>
+      <div id="dailyOriginalList">Loading…</div>
+      <div class="hint">Daily Top 3 Score Leaderboard</div>
     </div>
   </div>
 
@@ -252,6 +263,7 @@
     const globalOriginalEl = document.getElementById("globalOriginal");
     const globalEscapeEl   = document.getElementById("globalEscape");
     const globalGuiloEl    = document.getElementById("globalGuilo");
+    const dailyOriginalList = document.getElementById("dailyOriginalList");
 
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
@@ -305,6 +317,62 @@
     /* ----------------- Firestore global highscores ----------------- */
     const cachedGlobalBest = { original: null, escape: null, guilo: null };
     const pendingGlobalUpdate = { original: false, escape: false, guilo: false };
+    const DAILY_LEADERBOARD_COLLECTION = "dailyLeaderboards";
+    let dailyScoreSubmitted = false;
+
+    function getCurrentDailyId() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function formatScoreValue(score) {
+      return `$${Number(score).toFixed(2)}`;
+    }
+
+    function renderDailyLeaderboard(entries) {
+      if (!entries || entries.length === 0) {
+        dailyOriginalList.textContent = "No scores yet for today.";
+        return;
+      }
+      dailyOriginalList.innerHTML = entries.map((entry, index) =>
+        `<div class="row"><div class="label">${index + 1}.</div><div class="value">${formatScoreValue(entry.score)}</div></div>`
+      ).join('');
+    }
+
+    async function loadDailyLeaderboard() {
+      try {
+        const dailyId = getCurrentDailyId();
+        const dailySnap = await getDoc(doc(db, DAILY_LEADERBOARD_COLLECTION, dailyId));
+        const entries = dailySnap.exists() ? (dailySnap.data().original || []) : [];
+        entries.sort((a, b) => b.score - a.score);
+        renderDailyLeaderboard(entries.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to load daily leaderboard:", err);
+        dailyOriginalList.textContent = "Error loading daily leaderboard";
+      }
+    }
+
+    async function submitDailyLeaderboardScore(score) {
+      if (score <= 0) return;
+      try {
+        const dailyId = getCurrentDailyId();
+        const dailyRef = doc(db, DAILY_LEADERBOARD_COLLECTION, dailyId);
+        const dailySnap = await getDoc(dailyRef);
+        const currentEntries = dailySnap.exists() ? (Array.isArray(dailySnap.data().original) ? dailySnap.data().original.slice() : []) : [];
+        currentEntries.push({ score: Number(score), createdAt: new Date().toISOString() });
+        currentEntries.sort((a, b) => b.score - a.score);
+        if (currentEntries.length > 3) currentEntries.length = 3;
+        await setDoc(dailyRef, { original: currentEntries });
+        renderDailyLeaderboard(currentEntries);
+      } catch (err) {
+        console.error("Failed to submit daily leaderboard score:", err);
+      }
+    }
+
+    async function maybeSubmitDailyOriginalScore(score) {
+      if (currentMode !== 'original' || dailyScoreSubmitted || score <= 0) return;
+      dailyScoreSubmitted = true;
+      await submitDailyLeaderboardScore(score);
+    }
 
     async function loadGlobalHighscores() {
       try {
@@ -323,11 +391,13 @@
         cachedGlobalBest.original = originalBest;
         cachedGlobalBest.escape = escapeBest;
         cachedGlobalBest.guilo = guiloBest;
+        await loadDailyLeaderboard();
       } catch (err) {
         console.error("Failed to load global highscores:", err);
         globalOriginalEl.textContent = "Error";
         globalEscapeEl.textContent = "Error";
         globalGuiloEl.textContent = "Error";
+        dailyOriginalList.textContent = "Error loading daily leaderboard";
       }
     }
 
@@ -762,7 +832,10 @@
               showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
-              try { await updateGlobalHighscore(currentMode, collectedAtDeath); } catch (e) { console.warn('Global update on death (enemy) failed', e); }
+              try {
+                await updateGlobalHighscore(currentMode, collectedAtDeath);
+                await maybeSubmitDailyOriginalScore(collectedAtDeath);
+              } catch (e) { console.warn('Global update on death (enemy) failed', e); }
             } else {
               total = parseFloat((total * 0.7).toFixed(2));
               showOverlay('❌ Enemy hit! Total reduced to 70%');
@@ -775,7 +848,10 @@
             showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             gameOver = true;
             stopSpawnAndIntervals();
-            try { await updateGlobalHighscore(currentMode, collectedAtDeath); } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
+            try {
+              await updateGlobalHighscore(currentMode, collectedAtDeath);
+              await maybeSubmitDailyOriginalScore(collectedAtDeath);
+            } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
           } else if (type === 'x5') {
             total = parseFloat((total * 5).toFixed(2));
             showOverlay('💥 x5 Collected!');
@@ -836,6 +912,7 @@
       breath = MAX_BREATH;
       currentLevel = 0;
       gameOver = false;
+      dailyScoreSubmitted = false;
       best = loadLocalBest(currentMode);
       updateUI();
       updateBreathUI();
@@ -926,7 +1003,10 @@
             saveLocalBest(currentMode, total);
             best = total;
           }
-          try { await updateGlobalHighscore(currentMode, total); } catch (e) { console.warn('Global update on back-to-menu failed', e); }
+          try {
+            await updateGlobalHighscore(currentMode, total);
+            await maybeSubmitDailyOriginalScore(total);
+          } catch (e) { console.warn('Global update on back-to-menu failed', e); }
         }
       } catch (err) {
         console.error('Error saving on back to menu:', err);
