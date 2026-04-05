@@ -37,9 +37,9 @@
     }
     #globalBox h2,
     #dailyBox h2 { font-size: 16px; margin: 0 0 8px; color: #bbb; }
-    .row { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0; }
-    .label { color: #ddd; font-weight: 700; }
-    .value { color: #fff; font-weight: 800; }
+    .modeBlock { margin: 8px 0; }
+    .modeLabel { color: #ddd; font-weight: 700; margin-bottom: 4px; }
+    .modeScore { color: #fff; font-weight: 800; }
     .hint { color: #888; font-size: 12px; margin-top: 8px; }
 
     /* ---------- Game container ---------- */
@@ -149,8 +149,14 @@
 <body>
   <!-- Main Menu -->
   <div id="menu">
-    <h1>Big Jar</h1>
-    <p class="changelog">Changelogs: 2026-04-04 @12:40 PM: Fixed Global Leaderboard, New Daily Global Leaderboard For Original Mode </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h1 style="margin: 0; flex: 1;">Big Jar</h1>
+      <div id="authContainer" style="display: flex; gap: 8px; align-items: center;">
+        <span id="usernameDisplay" style="color: #4a9eff; font-weight: 700; font-size: 14px;"></span>
+        <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
+      </div>
+    </div>
+    <p class="changelog">Changelogs: 2026-04-05 @2:37 PM: Fixed Global Leaderboard, Accounts, Leaderboards + more! </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -160,17 +166,17 @@
     <!-- Global highscores (Firestore) -->
     <div id="globalBox">
       <h2>Global highscores</h2>
-      <div class="row">
-        <div class="label">Original</div>
-        <div class="value" id="globalOriginal">Loading…</div>
+      <div class="modeBlock">
+        <div class="modeLabel">Original</div>
+        <div class="modeScore" id="globalOriginal">Loading…</div>
       </div>
-      <div class="row">
-        <div class="label">IGRY Mode</div>
-        <div class="value" id="globalEscape">Loading…</div>
+      <div class="modeBlock">
+        <div class="modeLabel">IGRY Mode</div>
+        <div class="modeScore" id="globalEscape">Loading…</div>
       </div>
-      <div class="row">
-        <div class="label">Escape the Gas Chambers</div>
-        <div class="value" id="globalGuilo">Loading…</div>
+      <div class="modeBlock">
+        <div class="modeLabel">Escape the Gas Chambers</div>
+        <div class="modeScore" id="globalGuilo">Loading…</div>
       </div>
       <div class="hint">Scores are shared across all players.</div>
     </div>
@@ -179,6 +185,23 @@
       <h2>Daily Original leaderboard</h2>
       <div id="dailyOriginalList">Loading…</div>
       <div class="hint">Daily Top 3 Score Leaderboard</div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 14px; padding: 24px; width: min(400px, 90vw); box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+      <h2 style="margin-top: 0; color: #fff; font-size: 20px;">Sign In / Sign Up</h2>
+      <label style="display: block; margin-top: 16px; color: #ddd; font-weight: 700; font-size: 14px;">Username</label>
+      <input id="authUsername" type="text" placeholder="Enter username" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <label style="display: block; margin-top: 12px; color: #ddd; font-weight: 700; font-size: 14px;">Password</label>
+      <input id="authPassword" type="password" placeholder="Enter password" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <div id="authMessage" style="min-height: 20px; margin-top: 12px; color: #aaa; font-size: 12px;"></div>
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button id="authSignUp" class="menuBtn primary" style="flex: 1; min-width: auto; padding: 12px;">Sign Up</button>
+        <button id="authSignIn" class="menuBtn secondary" style="flex: 1; min-width: auto; padding: 12px;">Sign In</button>
+        <button id="authClose" class="menuBtn secondary" style="flex: 1; min-width: auto; padding: 12px;">Close</button>
+      </div>
     </div>
   </div>
 
@@ -222,10 +245,18 @@
 
   <!-- Firebase + Firestore (modular v10 CDN) -->
   <script type="module">
-    /* ----------------- Firebase setup ----------------- */
+    /* ----------------- Firebase setup with Auth ----------------- */
     import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAnalytics }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBVGdjFlOMxUSxsL1RaLKfb1xvJAVTD8_k",
@@ -240,6 +271,7 @@
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     /* ----------------- DOM refs ----------------- */
     const menuEl = document.getElementById('menu');
@@ -264,6 +296,20 @@
     const globalEscapeEl   = document.getElementById("globalEscape");
     const globalGuiloEl    = document.getElementById("globalGuilo");
     const dailyOriginalList = document.getElementById("dailyOriginalList");
+
+    // Auth UI
+    const authBtn = document.getElementById("authBtn");
+    const authModal = document.getElementById("authModal");
+    const authUsernameInput = document.getElementById("authUsername");
+    const authPasswordInput = document.getElementById("authPassword");
+    const authSignUpBtn = document.getElementById("authSignUp");
+    const authSignInBtn = document.getElementById("authSignIn");
+    const authCloseBtn = document.getElementById("authClose");
+    const authMessage = document.getElementById("authMessage");
+    const usernameDisplay = document.getElementById("usernameDisplay");
+
+    let currentUser = null;
+    let currentUsername = null;
 
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
@@ -334,9 +380,122 @@
         return;
       }
       dailyOriginalList.innerHTML = entries.map((entry, index) =>
-        `<div class="row"><div class="label">${index + 1}.</div><div class="value">${formatScoreValue(entry.score)}</div></div>`
+        `<div class="row"><div class="label">${index + 1}. ${entry.username ? entry.username : 'Anonymous'}</div><div class="value">${formatScoreValue(entry.score)}</div></div>`
       ).join('');
     }
+
+    /* --------- Auth Functions --------- */
+    function showAuthMessage(text, isError = false) {
+      authMessage.textContent = text;
+      authMessage.style.color = isError ? "#ff9999" : "#99dd99";
+    }
+
+    function openAuthModal() {
+      authModal.style.display = 'flex';
+      authUsernameInput.value = '';
+      authPasswordInput.value = '';
+      showAuthMessage('');
+      authUsernameInput.focus();
+    }
+
+    function closeAuthModal() {
+      authModal.style.display = 'none';
+    }
+
+    function updateAuthUI() {
+      if (currentUser && currentUsername) {
+        usernameDisplay.textContent = `${currentUsername}`;
+        authBtn.textContent = 'Sign Out';
+        authBtn.onclick = async () => {
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Sign out failed:', error);
+          }
+        };
+      } else {
+        usernameDisplay.textContent = '';
+        authBtn.textContent = 'Sign In';
+        authBtn.onclick = openAuthModal;
+      }
+    }
+
+    async function handleAuthSignUp() {
+      const username = authUsernameInput.value.trim();
+      const password = authPasswordInput.value;
+
+      if (!username || !password) {
+        showAuthMessage('Enter both username and password.', true);
+        return;
+      }
+
+      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      try {
+        showAuthMessage('Creating account...');
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: username });
+        await setDoc(doc(db, "users", user.uid), {
+          username,
+          createdAt: new Date().toISOString()
+        });
+        showAuthMessage('Account created! Signed in.');
+        setTimeout(() => closeAuthModal(), 1000);
+      } catch (error) {
+        console.error(error);
+        showAuthMessage(error.message || 'Sign up failed.', true);
+      }
+    }
+
+    async function handleAuthSignIn() {
+      const username = authUsernameInput.value.trim();
+      const password = authPasswordInput.value;
+
+      if (!username || !password) {
+        showAuthMessage('Enter both username and password.', true);
+        return;
+      }
+
+      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      try {
+        showAuthMessage('Signing in...');
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const storedUsername = user.displayName || username;
+        showAuthMessage('Signed in!');
+        setTimeout(() => closeAuthModal(), 1000);
+      } catch (error) {
+        console.error(error);
+        showAuthMessage(error.message || 'Sign in failed.', true);
+      }
+    }
+
+    authBtn.addEventListener('click', openAuthModal);
+    authSignUpBtn.addEventListener('click', handleAuthSignUp);
+    authSignInBtn.addEventListener('click', handleAuthSignIn);
+    authCloseBtn.addEventListener('click', closeAuthModal);
+
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+
+    authUsernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') authPasswordInput.focus();
+    });
+
+    authPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAuthSignIn();
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        currentUsername = user.displayName || user.email.split('@')[0];
+      } else {
+        currentUsername = null;
+      }
+      updateAuthUI();
+    });
 
     async function loadDailyLeaderboard() {
       try {
@@ -358,7 +517,16 @@
         const dailyRef = doc(db, DAILY_LEADERBOARD_COLLECTION, dailyId);
         const dailySnap = await getDoc(dailyRef);
         const currentEntries = dailySnap.exists() ? (Array.isArray(dailySnap.data().original) ? dailySnap.data().original.slice() : []) : [];
-        currentEntries.push({ score: Number(score), createdAt: new Date().toISOString() });
+        
+        const scoreEntry = {
+          score: Number(score),
+          createdAt: new Date().toISOString()
+        };
+        if (currentUser && currentUsername) {
+          scoreEntry.username = currentUsername;
+        }
+        
+        currentEntries.push(scoreEntry);
         currentEntries.sort((a, b) => b.score - a.score);
         if (currentEntries.length > 3) currentEntries.length = 3;
         await setDoc(dailyRef, { original: currentEntries });
@@ -384,9 +552,25 @@
         const escapeBest   = escapeSnap.exists() ? Number(escapeSnap.data().best)   : null;
         const guiloBest    = guiloSnap.exists() ? Number(guiloSnap.data().best)   : null;
 
-        globalOriginalEl.textContent = originalBest != null ? `$${originalBest.toFixed(2)}` : "No score yet";
-        globalEscapeEl.textContent   = escapeBest != null   ? `$${escapeBest.toFixed(2)}`   : "No score yet";
-        globalGuiloEl.textContent    = guiloBest != null    ? `$${guiloBest.toFixed(2)}`    : "No score yet";
+        let originalDisplay = "No score yet";
+        if (originalSnap.exists()) {
+          const username = originalSnap.data().username || "Anonymous";
+          originalDisplay = `${username}: $${originalBest.toFixed(2)}`;
+        }
+        let escapeDisplay = "No score yet";
+        if (escapeSnap.exists()) {
+          const username = escapeSnap.data().username || "Anonymous";
+          escapeDisplay = `${username}: $${escapeBest.toFixed(2)}`;
+        }
+        let guiloDisplay = "No score yet";
+        if (guiloSnap.exists()) {
+          const username = guiloSnap.data().username || "Anonymous";
+          guiloDisplay = `${username}: $${guiloBest.toFixed(2)}`;
+        }
+
+        globalOriginalEl.textContent = originalDisplay;
+        globalEscapeEl.textContent   = escapeDisplay;
+        globalGuiloEl.textContent    = guiloDisplay;
 
         cachedGlobalBest.original = originalBest;
         cachedGlobalBest.escape = escapeBest;
@@ -412,10 +596,15 @@
         const currentBest = snap.exists() ? Number(snap.data().best) : null;
 
         if (currentBest == null || score > currentBest) {
-          await setDoc(ref, { best: Number(score) });
-          if (mode === 'original') globalOriginalEl.textContent = `$${Number(score).toFixed(2)}`;
-          else if (mode === 'escape') globalEscapeEl.textContent = `$${Number(score).toFixed(2)}`;
-          else if (mode === 'guilo') globalGuiloEl.textContent = `$${Number(score).toFixed(2)}`;
+          const username = currentUsername || "Anonymous";
+          const scoreData = { best: Number(score), username };
+          await setDoc(ref, scoreData);
+          
+          const displayText = `${username}: $${Number(score).toFixed(2)}`;
+          
+          if (mode === 'original') globalOriginalEl.textContent = displayText;
+          else if (mode === 'escape') globalEscapeEl.textContent = displayText;
+          else if (mode === 'guilo') globalGuiloEl.textContent = displayText;
           cachedGlobalBest[mode === 'escape' ? 'escape' : (mode === 'guilo' ? 'guilo' : 'original')] = Number(score);
           return true;
         }
