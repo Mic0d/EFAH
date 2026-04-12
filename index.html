@@ -156,7 +156,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-04-05 @2:37 PM: Fixed Global Leaderboard, Accounts, Leaderboards + more! </p>
+    <p class="changelog">Changelogs: 2026-04-012 @1:05 PM: Added pause functionality and changed in-game highscore leaderboard </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -212,6 +212,8 @@
         💰 Total: <div id="totalDisplay" style="display:inline-block;">$0.00</div>
         <div id="bestLabel">Best (local): $0.00</div>
       </div>
+
+      <button id="pauseBtn" style="display: none; position: absolute; top: 50px; left: 90%; transform: translateX(-50%); z-index: 700; background: #fff; color: #000; padding: 2px 7px; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">Pause</button>
 
       <div id="breathBarContainer">
         <div>🫁 Breath</div>
@@ -282,6 +284,7 @@
     const totalDisplay = document.getElementById('totalDisplay');
     const bestLabel = document.getElementById('bestLabel');
     const backToMenuBtn = document.getElementById('backToMenu');
+    const pauseBtn = document.getElementById('pauseBtn');
 
     const modeSelect = document.getElementById('modeSelect');
     const mobileSliderWrap = document.getElementById('mobileSliderWrap');
@@ -349,6 +352,9 @@
     const MAX_BREATH = 100;
     const BREATH_DECAY_RATE = 0.3; // per frame
     const BREATH_RESTORE_PER_COIN = 8; // per coin collected
+
+    // Pause state
+    let isPaused = false;
 
     // timers & intervals tracking for cleanup
     let spawnTimeoutId = null;
@@ -652,12 +658,13 @@
         best = parseFloat(total.toFixed(2));
         saveLocalBest(currentMode, best);
       }
-      bestLabel.textContent = `Best (local): $${best.toFixed(2)}`;
+      const key = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : 'original');
+      const globalBest = cachedGlobalBest[key];
+      const globalBestDisplay = globalBest !== null ? `$${globalBest.toFixed(2)}` : 'No score yet';
+      bestLabel.textContent = `Highscore: ${globalBestDisplay}`;
       checkLevelChange();
       try {
-        const key = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : 'original');
-        const cached = cachedGlobalBest[key];
-        if (!pendingGlobalUpdate[key] && (cached === null || total > cached)) {
+        if (!pendingGlobalUpdate[key] && (cachedGlobalBest[key] === null || total > cachedGlobalBest[key])) {
           pendingGlobalUpdate[key] = true;
           updateGlobalHighscore(currentMode, total)
             .then((didWrite) => {
@@ -760,7 +767,7 @@
     });
 
     function updatePlayerLoop() {
-      if (!gameOver) {
+      if (!gameOver && !isPaused) {
         playerX += (targetX - playerX) * 0.18;
         playerEl.style.left = playerX + 'px';
       }
@@ -959,7 +966,7 @@
     }
 
     function spawnLoop() {
-      if (gameOver) return;
+      if (gameOver || isPaused) return;
       spawnObject();
       spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
     }
@@ -967,11 +974,13 @@
     function startFall(el, type = '') {
       const tickMs = 30;
       const intervalId = setInterval(async () => {
-        if (gameOver) {
-          if (el.parentElement) el.remove();
-          clearInterval(intervalId);
-          activeIntervals.delete(intervalId);
-          activeElements.delete(el);
+        if (gameOver || isPaused) {
+          if (gameOver) {
+            if (el.parentElement) el.remove();
+            clearInterval(intervalId);
+            activeIntervals.delete(intervalId);
+            activeElements.delete(el);
+          }
           return;
         }
 
@@ -1101,6 +1110,7 @@
       breath = MAX_BREATH;
       currentLevel = 0;
       gameOver = false;
+      isPaused = false;
       dailyScoreSubmitted = false;
       best = loadLocalBest(currentMode);
       updateUI();
@@ -1123,6 +1133,9 @@
       gameWrapper.setAttribute('aria-hidden', 'false');
 
       resetGameState();
+      isPaused = false;
+      pauseBtn.style.display = currentMode === 'original' ? 'block' : 'none';
+      pauseBtn.textContent = 'Pause';
 
       // Show/hide breath bar
       if (currentMode === 'guilo') {
@@ -1219,6 +1232,24 @@
       } else {
         mobileSliderWrap.style.display = 'none';
         mobileSliderWrap.classList.remove('centered');
+      }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (currentMode !== 'original' || gameOver) return;
+      isPaused = !isPaused;
+      pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+      if (isPaused) {
+        backgroundMusic.pause();
+      } else {
+        backgroundMusic.play().catch(e => console.warn('Failed to resume music:', e));
+        // Resume spawning
+        if (spawnTimeoutId === null) {
+          spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
+        } else {
+          // If timeout already exists, let the next iteration of spawnLoop start new spawn
+          spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
+        }
       }
     });
 
