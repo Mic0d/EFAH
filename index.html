@@ -41,6 +41,51 @@
     .modeLabel { color: #ddd; font-weight: 700; margin-bottom: 4px; }
     .modeScore { color: #fff; font-weight: 800; }
     .hint { color: #888; font-size: 12px; margin-top: 8px; }
+    
+    /* Daily Wheel */
+    #wheelButton {
+      background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 12px 18px;
+      border: 2px solid #FF8C00; border-radius: 10px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255, 165, 0, 0.5); min-width: 140px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #wheelButton:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 30px rgba(255, 165, 0, 0.7); }
+    #wheelButton:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    #wheelModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    
+    #wheelContainer {
+      position: relative; width: 280px; height: 280px; margin-bottom: 20px;
+    }
+    
+    #wheelSvg {
+      width: 100%; height: 100%; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
+    }
+    
+    #wheelPointer {
+      position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent;
+      border-top: 20px solid #FFD700; z-index: 100; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+    
+    #wheelMessage {
+      color: #fff; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 20px;
+      min-height: 50px; display: flex; align-items: center; justify-content: center;
+    }
+    
+    #wheelResult {
+      color: #FFD700; font-size: 24px; font-weight: 800; text-align: center; margin-top: 16px;
+      min-height: 40px;
+    }
+    
+    #wheelCloseBtn {
+      background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; margin-top: 16px;
+    }
 
     /* ---------- Game container ---------- */
     #gameWrapper {
@@ -156,7 +201,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-04-16 @2:15 PM: Changed location of certain buttons </p>
+    <p class="changelog">Changelogs: 2026-06-01 @8:45 PM: Added spin wheel spinnable every 10 hrs for special abilities saved by account </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -185,6 +230,26 @@
       <h2>Daily Original leaderboard</h2>
       <div id="dailyOriginalList">Loading…</div>
       <div class="hint">Daily Top 3 Score Leaderboard</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 16px;">
+      <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
+    </div>
+  </div>
+
+  <!-- Wheel Modal -->
+  <div id="wheelModal">
+    <div style="background: #1b1b1b; border: 2px solid #FFD700; border-radius: 14px; padding: 24px; max-width: 400px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;">
+      <h2 style="margin-top: 0; color: #FFD700; font-size: 24px;">Daily Spin</h2>
+      <div id="wheelMessage">Get ready to spin!</div>
+      <div id="wheelContainer">
+        <div id="wheelPointer"></div>
+        <svg id="wheelSvg" viewBox="0 0 280 280">
+          <!-- Segments will be drawn by JavaScript -->
+        </svg>
+      </div>
+      <div id="wheelResult"></div>
+      <button id="wheelCloseBtn">Close</button>
     </div>
   </div>
 
@@ -311,8 +376,17 @@
     const authMessage = document.getElementById("authMessage");
     const usernameDisplay = document.getElementById("usernameDisplay");
 
+    // Wheel UI
+    const wheelButton = document.getElementById("wheelButton");
+    const wheelModal = document.getElementById("wheelModal");
+    const wheelCloseBtn = document.getElementById("wheelCloseBtn");
+    const wheelMessage = document.getElementById("wheelMessage");
+    const wheelResult = document.getElementById("wheelResult");
+    const wheelSvg = document.getElementById("wheelSvg");
+
     let currentUser = null;
     let currentUsername = null;
+    let userWheelData = null;
 
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
@@ -346,6 +420,11 @@
     let gameOver = false;
     let currentLevel = 0;
     let currentMode = 'original'; // 'original', 'escape', or 'guilo'
+
+    // Power-ups
+    let activePowerUps = {
+      revives: 0
+    };
 
     // Guilo-specific state
     let breath = 100;
@@ -412,6 +491,8 @@
       if (currentUser && currentUsername) {
         usernameDisplay.textContent = `${currentUsername}`;
         authBtn.textContent = 'Sign Out';
+        wheelButton.style.display = 'block';
+        updateWheelButtonState();
         authBtn.onclick = async () => {
           try {
             await signOut(auth);
@@ -422,6 +503,7 @@
       } else {
         usernameDisplay.textContent = '';
         authBtn.textContent = 'Sign In';
+        wheelButton.style.display = 'none';
         authBtn.onclick = openAuthModal;
       }
     }
@@ -497,8 +579,10 @@
       currentUser = user;
       if (user) {
         currentUsername = user.displayName || user.email.split('@')[0];
+        await loadWheelData();
       } else {
         currentUsername = null;
+        userWheelData = null;
       }
       updateAuthUI();
     });
@@ -547,6 +631,271 @@
       dailyScoreSubmitted = true;
       await submitDailyLeaderboardScore(score);
     }
+
+    /* --------- Wheel Functions --------- */
+    const WHEEL_SEGMENTS = [
+      { label: 'Revive', chance: 0.08, type: 'revive_original' },
+      { label: '3 Revives', chance: 0.02, type: 'triple_revive' },
+      { label: 'Nothing', chance: 0.90, type: 'nothing' }
+    ];
+
+    const WHEEL_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95A5A6'];
+
+    function drawWheel(rotation = 0) {
+      wheelSvg.innerHTML = '';
+      const centerX = 140;
+      const centerY = 140;
+      const radius = 120;
+
+      let currentAngle = rotation;
+      const anglePerSegment = 360 / WHEEL_SEGMENTS.length;
+
+      WHEEL_SEGMENTS.forEach((segment, index) => {
+        const startAngle = (currentAngle * Math.PI) / 180;
+        const endAngle = ((currentAngle + anglePerSegment) * Math.PI) / 180;
+
+        const x1 = centerX + radius * Math.cos(startAngle);
+        const y1 = centerY + radius * Math.sin(startAngle);
+        const x2 = centerX + radius * Math.cos(endAngle);
+        const y2 = centerY + radius * Math.sin(endAngle);
+
+        const largeArc = anglePerSegment > 180 ? 1 : 0;
+
+        const pathData = [
+          `M ${centerX} ${centerY}`,
+          `L ${x1} ${y1}`,
+          `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+          'Z'
+        ].join(' ');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('fill', WHEEL_COLORS[index]);
+        path.setAttribute('stroke', '#000');
+        path.setAttribute('stroke-width', '2');
+        wheelSvg.appendChild(path);
+
+        // Text label
+        const midAngle = (startAngle + endAngle) / 2;
+        const textRadius = radius * 0.6;
+        const textX = centerX + textRadius * Math.cos(midAngle);
+        const textY = centerY + textRadius * Math.sin(midAngle);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', textX);
+        text.setAttribute('y', textY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('fill', '#000');
+        text.textContent = segment.label.split('\n')[0];
+        wheelSvg.appendChild(text);
+
+        if (segment.label.includes('\n')) {
+          const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text2.setAttribute('x', textX);
+          text2.setAttribute('y', textY + 14);
+          text2.setAttribute('text-anchor', 'middle');
+          text2.setAttribute('dominant-baseline', 'central');
+          text2.setAttribute('font-size', '12');
+          text2.setAttribute('font-weight', 'bold');
+          text2.setAttribute('fill', '#000');
+          text2.textContent = segment.label.split('\n')[1];
+          wheelSvg.appendChild(text2);
+        }
+
+        currentAngle += anglePerSegment;
+      });
+    }
+
+    function spinWheel() {
+      return new Promise((resolve) => {
+        const spins = 5 + Math.random() * 5;
+        // Weighted selection based on `chance` field
+        const totalChance = WHEEL_SEGMENTS.reduce((s, seg) => s + (seg.chance || 0), 0);
+        let r = Math.random() * totalChance;
+        let selectedIndex = 0;
+        for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
+          const c = WHEEL_SEGMENTS[i].chance || 0;
+          if (r <= c) { selectedIndex = i; break; }
+          r -= c;
+        }
+        const finalRotation = spins * 360 + (selectedIndex * 360) / WHEEL_SEGMENTS.length + 90;
+
+        let currentRotation = 0;
+        const duration = 3000;
+        const startTime = Date.now();
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+          currentRotation = finalRotation * easeOutCubic;
+
+          wheelSvg.style.transform = `rotate(${currentRotation}deg)`;
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            resolve(selectedIndex);
+          }
+        };
+
+        animate();
+      });
+    }
+
+    function awardPrize(prizeType) {
+      const prizeMap = {
+        'revive_original': { name: 'Revive', desc: 'Revive once in Original mode!' },
+        // 'speed_boost' removed — slot replaced with nothing
+        'triple_revive': { name: 'Triple Revive', desc: '3 revives for Escape mode!' },
+        'nothing': { name: 'Nothing', desc: 'Better luck next time, nikka!' }
+      };
+      return prizeMap[prizeType] || { name: 'Unknown', desc: '' };
+    }
+
+    async function loadWheelData() {
+      if (!currentUser) return null;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          userWheelData = userSnap.data().wheelData || { lastSpin: null, prizes: [] };
+        } else {
+          userWheelData = { lastSpin: null, prizes: [] };
+        }
+        // Prune prizes older than 24 hours and remove already-used prizes from availability
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const originalLen = Array.isArray(userWheelData.prizes) ? userWheelData.prizes.length : 0;
+        userWheelData.prizes = (userWheelData.prizes || []).filter(p => {
+          const awarded = p && p.awardedAt ? new Date(p.awardedAt).getTime() : 0;
+          return (!p.used) && (now - awarded <= DAY_MS);
+        });
+        if (userWheelData.prizes.length !== originalLen) {
+          // persist pruning
+          await saveWheelData(userWheelData);
+        }
+        return userWheelData;
+      } catch (err) {
+        console.error("Failed to load wheel data:", err);
+        return null;
+      }
+    }
+
+    async function saveWheelData(wheelData) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { wheelData }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save wheel data:", err);
+      }
+    }
+
+    // Mark a prize as used (consumed) in the stored wheel data so revives persist for 24h until used
+    async function consumePrize(type) {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return;
+      const idx = userWheelData.prizes.findIndex(p => p && p.type === type && !p.used);
+      if (idx === -1) return;
+      userWheelData.prizes[idx].used = true;
+      userWheelData.prizes[idx].usedAt = new Date().toISOString();
+      try {
+        await saveWheelData(userWheelData);
+      } catch (e) {
+        console.warn('Failed to persist prize consumption', e);
+      }
+    }
+
+    function canSpinWheel() {
+      if (!userWheelData || !userWheelData.lastSpin) return true;
+      const lastSpinDate = new Date(userWheelData.lastSpin);
+      const now = new Date();
+      const diffTime = now - lastSpinDate;
+      const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+      return diffTime >= TEN_HOURS_MS; // 10 hours
+    }
+
+    async function updateWheelButtonState() {
+      if (!currentUser) {
+        wheelButton.disabled = true;
+        wheelButton.textContent = '🔒 Sign In to Spin';
+        return;
+      }
+
+      await loadWheelData();
+
+      if (canSpinWheel()) {
+        wheelButton.disabled = false;
+        wheelButton.textContent = '🎡 Spin Daily Wheel';
+      } else {
+        wheelButton.disabled = true;
+        const lastSpinDate = new Date(userWheelData.lastSpin);
+        const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+        const nextSpinDate = new Date(lastSpinDate.getTime() + TEN_HOURS_MS);
+        const now = new Date();
+        let diffMs = nextSpinDate - now;
+        if (diffMs < 0) diffMs = 0;
+        const seconds = Math.ceil(diffMs / 1000);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.ceil((seconds % 3600) / 60);
+        if (hours > 0) {
+          wheelButton.textContent = `🕐 Ready in ${hours}h ${minutes}m`;
+        } else {
+          wheelButton.textContent = `🕐 Ready in ${seconds}s`;
+        }
+      }
+    }
+
+    async function handleWheelSpin() {
+      if (!currentUser || !canSpinWheel()) return;
+
+      wheelButton.disabled = true;
+      wheelModal.style.display = 'flex';
+      drawWheel();
+      wheelMessage.textContent = 'Spinning...';
+      wheelResult.textContent = '';
+
+      const selectedIndex = await spinWheel();
+      const selectedSegment = WHEEL_SEGMENTS[selectedIndex];
+      const prize = awardPrize(selectedSegment.type);
+
+      wheelMessage.textContent = 'You won!';
+      wheelResult.textContent = `${prize.name}\n${prize.desc}`;
+
+      // Save to Firestore (store triple-revive as three separate revive prizes)
+      if (!userWheelData) userWheelData = { lastSpin: null, prizes: [] };
+      userWheelData.lastSpin = new Date().toISOString();
+      if (!userWheelData.prizes) userWheelData.prizes = [];
+      const awardedAt = new Date().toISOString();
+      if (selectedSegment.type === 'triple_revive') {
+        // Triple revives now grant revives usable in Escape mode
+        for (let i = 0; i < 3; i++) {
+          userWheelData.prizes.push({ type: 'revive_escape', awardedAt });
+        }
+      } else {
+        userWheelData.prizes.push({ type: selectedSegment.type, awardedAt });
+      }
+
+      await saveWheelData(userWheelData);
+      await updateWheelButtonState();
+    }
+
+    wheelButton.addEventListener('click', handleWheelSpin);
+    wheelCloseBtn.addEventListener('click', () => {
+      wheelModal.style.display = 'none';
+      drawWheel(0);
+    });
+
+    wheelModal.addEventListener('click', (e) => {
+      if (e.target === wheelModal) {
+        wheelModal.style.display = 'none';
+        drawWheel(0);
+      }
+    });
 
     async function loadGlobalHighscores() {
       try {
@@ -685,6 +1034,12 @@
 
     function showOverlay(text, withButton = false, persistent = false) {
       overlay.innerHTML = text + (withButton ? `<br><button id="overlayRestart">Restart</button>` : '');
+      
+      // Add revive button for Original or Escape mode if player has revives
+      if (persistent && (currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0 && gameOver) {
+        overlay.innerHTML += `<br><button id="overlayRevive" style="background: #4eff4a; color: #000; font-weight: 800; margin-left: 8px;">🔄 Revive (${activePowerUps.revives} left)</button>`;
+      }
+      
       overlay.style.display = 'block';
       overlay.setAttribute('aria-hidden', 'false');
 
@@ -695,6 +1050,21 @@
             stopGame();
             startGame(currentMode);
           });
+          
+          // Add revive handler
+          const reviveBtn = document.getElementById('overlayRevive');
+          if (reviveBtn) {
+            reviveBtn.addEventListener('click', async () => {
+              activePowerUps.revives = Math.max(0, (activePowerUps.revives || 0) - 1);
+              const prizeType = currentMode === 'escape' ? 'revive_escape' : 'revive_original';
+              await consumePrize(prizeType);
+              gameOver = false;
+              overlay.style.display = 'none';
+              overlay.setAttribute('aria-hidden', 'true');
+              showOverlay(`🔄 Revived!\nRevives remaining: ${activePowerUps.revives}`);
+              spawnLoop(); // Resume spawning
+            });
+          }
         }, 0);
       }
 
@@ -988,6 +1358,8 @@
         const effective = effectiveForScaling();
         let speed = (currentMode === 'escape') ? (3.5 + effective / 10) : (3 + effective / 12);
         
+        // (speed boost feature removed)
+        
         // Guilo: speed increases with money up to $200
         if (currentMode === 'guilo') {
           const moneySpeedBoost = Math.min(total, 200) * 0.02;
@@ -1027,25 +1399,33 @@
               try { await updateGlobalHighscore(currentMode, total); } catch (e) { console.warn('Global update on death failed', e); }
             } else if (total < 4) {
               const collectedAtDeath = total;
-              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               try {
                 await updateGlobalHighscore(currentMode, collectedAtDeath);
                 await maybeSubmitDailyOriginalScore(collectedAtDeath);
               } catch (e) { console.warn('Global update on death (enemy) failed', e); }
             } else {
-              total = parseFloat((total * 0.7).toFixed(2));
-              showOverlay('❌ Enemy hit! Total reduced to 70%');
-              updateUI();
+              // Check for revive power-up (Original and Escape modes)
+              if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0) {
+                const collectedAtDeath = total;
+                gameOver = true;
+                stopSpawnAndIntervals();
+                showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              } else {
+                total = parseFloat((total * 0.7).toFixed(2));
+                showOverlay('❌ Enemy hit! Total reduced to 70%');
+                updateUI();
+              }
             }
           } else if (type === 'bigEnemy') {
             const collectedAtDeath = total;
             total = 0;
             updateUI();
-            showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             gameOver = true;
             stopSpawnAndIntervals();
+            showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             try {
               await updateGlobalHighscore(currentMode, collectedAtDeath);
               await maybeSubmitDailyOriginalScore(collectedAtDeath);
@@ -1113,6 +1493,8 @@
       isPaused = false;
       dailyScoreSubmitted = false;
       best = loadLocalBest(currentMode);
+      // reset stored revives/grants
+      activePowerUps.revives = 0;
       updateUI();
       updateBreathUI();
       setPlayerImageForLevel(0);
@@ -1124,6 +1506,28 @@
       backgroundMusic.currentTime = 0;
       // Ensure mobile slider is not left centered after reset
       mobileSliderWrap.classList.remove('centered');
+    }
+
+    async function applyPowerUps() {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return;
+
+      // Count available (un-used, unexpired) revives in user's stored prizes (24h window)
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      let revivesToGrant = 0;
+      for (const prize of userWheelData.prizes) {
+        if (!prize || prize.used) continue;
+        const awarded = prize.awardedAt ? new Date(prize.awardedAt).getTime() : 0;
+        if (now - awarded > DAY_MS) continue; // expired
+        if (prize.type === 'revive_original' && currentMode === 'original') revivesToGrant += 1;
+        if (prize.type === 'revive_escape' && currentMode === 'escape') revivesToGrant += 1;
+      }
+
+      if (revivesToGrant > 0) {
+        activePowerUps.revives = (activePowerUps.revives || 0) + revivesToGrant;
+      }
+
+      updateUI();
     }
 
     function startGame(mode) {
@@ -1142,6 +1546,11 @@
         breathBarContainer.style.display = 'block';
       } else {
         breathBarContainer.style.display = 'none';
+      }
+
+      // Apply power-ups for Original and Escape modes
+      if (currentMode === 'original' || currentMode === 'escape') {
+        applyPowerUps().catch(e => console.warn('Failed to apply power-ups:', e));
       }
 
       // Play background music only in Original mode
