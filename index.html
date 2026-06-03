@@ -130,6 +130,23 @@
     }
     #overlay button { margin-top: 12px; padding: 8px 12px; border-radius: 6px; border: none; background: #fff; color: #c00; font-weight:700; cursor:pointer; }
 
+    #coinNotification {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.85);
+      color: #ffd700;
+      border: 1px solid rgba(255,215,0,0.7);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      display: none;
+      z-index: 550;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      pointer-events: none;
+    }
+
     /* player */
     #player {
       position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
@@ -197,11 +214,12 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
       <h1 style="margin: 0; flex: 1;">Big Jar</h1>
       <div id="authContainer" style="display: flex; gap: 8px; align-items: center;">
+        <span id="coinsDisplay" style="color: #ffd700; font-weight: 700; font-size: 14px;"></span>
         <span id="usernameDisplay" style="color: #4a9eff; font-weight: 700; font-size: 14px;"></span>
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-06-01 @8:45 PM: Added spin wheel spinnable every 10 hrs for special abilities saved by account </p>
+    <p class="changelog">Changelogs: 2026-06-03 @11:50 AM: Spin the spin wheel when you run out of daily spins for low price of 20 coins (1 coin per e+1) </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -288,6 +306,7 @@
       </div>
 
       <div id="overlay" role="dialog" aria-hidden="true"></div>
+      <div id="coinNotification" aria-hidden="true"></div>
       <div id="player" aria-hidden="false"></div>
 
       <button id="backToMenu">Back to Menu</button>
@@ -369,6 +388,7 @@
     const authBtn = document.getElementById("authBtn");
     const authModal = document.getElementById("authModal");
     const authUsernameInput = document.getElementById("authUsername");
+    const coinsDisplay = document.getElementById("coinsDisplay");
     const authPasswordInput = document.getElementById("authPassword");
     const authSignUpBtn = document.getElementById("authSignUp");
     const authSignInBtn = document.getElementById("authSignIn");
@@ -387,6 +407,9 @@
     let currentUser = null;
     let currentUsername = null;
     let userWheelData = null;
+    let currentCoins = 0;
+    let coinsAwardedThisRun = false;
+    const COIN_SPIN_COST = 20;
 
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
@@ -493,6 +516,7 @@
         authBtn.textContent = 'Sign Out';
         wheelButton.style.display = 'block';
         updateWheelButtonState();
+        updateCoinUI();
         authBtn.onclick = async () => {
           try {
             await signOut(auth);
@@ -504,6 +528,7 @@
         usernameDisplay.textContent = '';
         authBtn.textContent = 'Sign In';
         wheelButton.style.display = 'none';
+        coinsDisplay.textContent = '';
         authBtn.onclick = openAuthModal;
       }
     }
@@ -525,7 +550,8 @@
         await updateProfile(user, { displayName: username });
         await setDoc(doc(db, "users", user.uid), {
           username,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          coins: 0
         });
         showAuthMessage('Account created! Signed in.');
         setTimeout(() => closeAuthModal(), 1000);
@@ -583,6 +609,7 @@
       } else {
         currentUsername = null;
         userWheelData = null;
+        currentCoins = 0;
       }
       updateAuthUI();
     });
@@ -764,9 +791,12 @@
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           userWheelData = userSnap.data().wheelData || { lastSpin: null, prizes: [] };
+          currentCoins = Number(userSnap.data().coins || 0);
         } else {
           userWheelData = { lastSpin: null, prizes: [] };
+          currentCoins = 0;
         }
+        updateCoinUI();
         // Prune prizes older than 24 hours and remove already-used prizes from availability
         const DAY_MS = 24 * 60 * 60 * 1000;
         const now = Date.now();
@@ -794,6 +824,65 @@
       } catch (err) {
         console.error("Failed to save wheel data:", err);
       }
+    }
+
+    async function saveUserCoinBalance(coins) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { coins }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save coin balance:", err);
+      }
+    }
+
+    let coinNotificationTimeout = null;
+
+    function updateCoinUI() {
+      if (currentUser) {
+        coinsDisplay.textContent = `Coins: ${currentCoins}`;
+      } else {
+        coinsDisplay.textContent = '';
+      }
+    }
+
+    function showCoinNotification(text) {
+      const notification = document.getElementById('coinNotification');
+      if (!notification) return;
+      notification.textContent = text;
+      notification.style.display = 'block';
+      notification.setAttribute('aria-hidden', 'false');
+      if (coinNotificationTimeout) {
+        clearTimeout(coinNotificationTimeout);
+      }
+      coinNotificationTimeout = setTimeout(() => {
+        notification.style.display = 'none';
+        notification.setAttribute('aria-hidden', 'true');
+        coinNotificationTimeout = null;
+      }, 3000);
+    }
+
+    function getCoinRewardFromScore(score) {
+      const numericScore = Number(score);
+      if (!Number.isFinite(numericScore) || numericScore <= 0) return 0;
+      const expo = numericScore.toExponential(20);
+      const match = expo.match(/e([+-]?\d+)/i);
+      if (match) {
+        return Math.max(0, Number(match[1]));
+      }
+      return Math.max(0, Math.floor(Math.log10(Math.abs(numericScore))));
+    }
+
+    async function awardOriginalCoins(score) {
+      if (!currentUser || currentMode !== 'original' || coinsAwardedThisRun) return 0;
+      const coinsEarned = getCoinRewardFromScore(score);
+      if (coinsEarned <= 0) return 0;
+      currentCoins += coinsEarned;
+      coinsAwardedThisRun = true;
+      updateCoinUI();
+      await saveUserCoinBalance(currentCoins);
+      showCoinNotification(`💰 Coins earned: +${coinsEarned}`);
+      return coinsEarned;
     }
 
     // Mark a prize as used (consumed) in the stored wheel data so revives persist for 24h until used
@@ -831,6 +920,9 @@
       if (canSpinWheel()) {
         wheelButton.disabled = false;
         wheelButton.textContent = '🎡 Spin Daily Wheel';
+      } else if (currentCoins >= COIN_SPIN_COST) {
+        wheelButton.disabled = false;
+        wheelButton.textContent = `🎡 Buy Spin for ${COIN_SPIN_COST} Coins`;
       } else {
         wheelButton.disabled = true;
         const lastSpinDate = new Date(userWheelData.lastSpin);
@@ -851,12 +943,22 @@
     }
 
     async function handleWheelSpin() {
-      if (!currentUser || !canSpinWheel()) return;
+      if (!currentUser) return;
+      await loadWheelData();
+      const freeSpin = canSpinWheel();
+      const canPurchase = !freeSpin && currentCoins >= COIN_SPIN_COST;
+      if (!freeSpin && !canPurchase) return;
+
+      if (!freeSpin) {
+        currentCoins -= COIN_SPIN_COST;
+        await saveUserCoinBalance(currentCoins);
+        updateCoinUI();
+      }
 
       wheelButton.disabled = true;
       wheelModal.style.display = 'flex';
       drawWheel();
-      wheelMessage.textContent = 'Spinning...';
+      wheelMessage.textContent = freeSpin ? 'Spinning...' : 'Spinning (paid spin)...';
       wheelResult.textContent = '';
 
       const selectedIndex = await spinWheel();
@@ -1403,12 +1505,14 @@
               stopSpawnAndIntervals();
               showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               try {
+                if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
                 await updateGlobalHighscore(currentMode, collectedAtDeath);
                 await maybeSubmitDailyOriginalScore(collectedAtDeath);
               } catch (e) { console.warn('Global update on death (enemy) failed', e); }
             } else {
-              // Check for revive power-up (Original and Escape modes)
-              if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0) {
+              // Normal enemy hit should still reduce total to 70%.
+              // A revive does not change this unless the player would otherwise die.
+              if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0 && total < 4) {
                 const collectedAtDeath = total;
                 gameOver = true;
                 stopSpawnAndIntervals();
@@ -1427,6 +1531,7 @@
             stopSpawnAndIntervals();
             showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
             try {
+              if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
               await updateGlobalHighscore(currentMode, collectedAtDeath);
               await maybeSubmitDailyOriginalScore(collectedAtDeath);
             } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
@@ -1492,6 +1597,7 @@
       gameOver = false;
       isPaused = false;
       dailyScoreSubmitted = false;
+      coinsAwardedThisRun = false;
       best = loadLocalBest(currentMode);
       // reset stored revives/grants
       activePowerUps.revives = 0;
@@ -1615,6 +1721,7 @@
             best = total;
           }
           try {
+            if (currentMode === 'original') await awardOriginalCoins(total);
             await updateGlobalHighscore(currentMode, total);
             await maybeSubmitDailyOriginalScore(total);
           } catch (e) { console.warn('Global update on back-to-menu failed', e); }
