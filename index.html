@@ -219,7 +219,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-06-03 @11:50 AM: Spin the spin wheel when you run out of daily spins for low price of 20 coins (1 coin per e+1) </p>
+    <p class="changelog">Changelogs: 2026-06-04 @09:36 AM: Added optimizations for spin saves / server side saves, fixed revive ability not reviving bug </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -968,7 +968,7 @@
       wheelMessage.textContent = 'You won!';
       wheelResult.textContent = `${prize.name}\n${prize.desc}`;
 
-      // Save to Firestore (store triple-revive as three separate revive prizes)
+      // Save only active revive prizes to Firestore; do not store "nothing" spins.
       if (!userWheelData) userWheelData = { lastSpin: null, prizes: [] };
       userWheelData.lastSpin = new Date().toISOString();
       if (!userWheelData.prizes) userWheelData.prizes = [];
@@ -978,7 +978,7 @@
         for (let i = 0; i < 3; i++) {
           userWheelData.prizes.push({ type: 'revive_escape', awardedAt });
         }
-      } else {
+      } else if (selectedSegment.type === 'revive_original') {
         userWheelData.prizes.push({ type: selectedSegment.type, awardedAt });
       }
 
@@ -1525,16 +1525,22 @@
             }
           } else if (type === 'bigEnemy') {
             const collectedAtDeath = total;
-            total = 0;
-            updateUI();
-            gameOver = true;
-            stopSpawnAndIntervals();
-            showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
-            try {
-              if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
-              await updateGlobalHighscore(currentMode, collectedAtDeath);
-              await maybeSubmitDailyOriginalScore(collectedAtDeath);
-            } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
+            if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0) {
+              gameOver = true;
+              stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+            } else {
+              total = 0;
+              updateUI();
+              gameOver = true;
+              stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              try {
+                if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
+                await updateGlobalHighscore(currentMode, collectedAtDeath);
+                await maybeSubmitDailyOriginalScore(collectedAtDeath);
+              } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
+            }
           } else if (type === 'x5') {
             total = parseFloat((total * 5).toFixed(2));
             showOverlay('💥 x5 Collected!');
