@@ -58,20 +58,6 @@
       flex-direction: column;
     }
     
-    #wheelContainer {
-      position: relative; width: 280px; height: 280px; margin-bottom: 20px;
-    }
-    
-    #wheelSvg {
-      width: 100%; height: 100%; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
-    }
-    
-    #wheelPointer {
-      position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
-      width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent;
-      border-top: 20px solid #FFD700; z-index: 100; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-    }
-    
     #wheelMessage {
       color: #fff; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 20px;
       min-height: 50px; display: flex; align-items: center; justify-content: center;
@@ -83,6 +69,51 @@
     }
     
     #wheelCloseBtn {
+      background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; margin-top: 16px;
+    }
+
+    /* Luck Upgrades Modal */
+    #luckModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+
+    #luckModalContent {
+      background: #1b1b1b; border: 2px solid #FFD700; border-radius: 14px; padding: 24px;
+      max-width: 450px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;
+    }
+
+    #luckModalContent h2 { margin-top: 0; color: #FFD700; font-size: 24px; }
+
+    #luckModalContent .modeLabel {
+      color: #ddd; font-weight: 700; margin: 16px 0 12px; font-size: 14px;
+    }
+
+    #luckUpgradeButtons {
+      display: flex; flex-direction: column; gap: 10px; margin: 16px 0;
+    }
+
+    .luckUpgradeBtn {
+      background: #4a9eff; color: #fff; border: none; padding: 12px 16px;
+      border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%;
+      transition: all 0.2s;
+    }
+
+    .luckUpgradeBtn:hover:not(:disabled) {
+      background: #6ab3ff; transform: scale(1.02);
+    }
+
+    .luckUpgradeBtn:disabled {
+      background: #666; opacity: 0.6; cursor: not-allowed;
+    }
+
+    #luckModalContent .hint {
+      color: #888; font-size: 12px; margin-top: 12px;
+    }
+
+    #luckCloseBtn {
       background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
       font-weight: 800; cursor: pointer; margin-top: 16px;
     }
@@ -219,7 +250,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-06-04 @09:36 AM: Added optimizations for spin saves / server side saves, fixed revive ability not reviving bug </p>
+    <p class="changelog">Changelogs: 2026-06-10 @6:36 PM: LAST UPDATE until summer update; added luck for spin wheel and revamped spin wheel UI!</p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -252,6 +283,7 @@
 
     <div style="text-align: center; margin-top: 16px;">
       <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
+      <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 10px;">💎 Spin Luck Upgrades</button>
     </div>
   </div>
 
@@ -260,14 +292,29 @@
     <div style="background: #1b1b1b; border: 2px solid #FFD700; border-radius: 14px; padding: 24px; max-width: 400px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;">
       <h2 style="margin-top: 0; color: #FFD700; font-size: 24px;">Daily Spin</h2>
       <div id="wheelMessage">Get ready to spin!</div>
-      <div id="wheelContainer">
-        <div id="wheelPointer"></div>
-        <svg id="wheelSvg" viewBox="0 0 280 280">
-          <!-- Segments will be drawn by JavaScript -->
-        </svg>
+      <div id="wheelDisplay" style="font-size: 20px; font-weight: 700; color: #fff; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px;">
+        <!-- Text will cycle here -->
       </div>
       <div id="wheelResult"></div>
       <button id="wheelCloseBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Luck Modal -->
+  <div id="luckModal">
+    <div id="luckModalContent">
+      <h2>💎 Spin Luck Upgrades</h2>
+      <div style="text-align: left;">
+        <p style="color: #bbb; font-size: 14px; margin: 0 0 12px; text-align: center;">Luck improves wheel odds for both daily and paid spins.</p>
+        <div id="luckStatusDisplay" style="color: #fff; font-weight: 700; margin-bottom: 12px; text-align: center;">Sign in to unlock luck upgrades.</div>
+        <div id="luckUpgradeButtons">
+          <button class="luckUpgradeBtn" id="buyLuck1" style="display: none;">Buy Luck 1 (50 coins)</button>
+          <button class="luckUpgradeBtn" id="buyLuck2" style="display: none;">Buy Luck 2 (120 coins)</button>
+          <button class="luckUpgradeBtn" id="buyLuck3" style="display: none;">Buy Luck 3 (300 coins)</button>
+        </div>
+        <div class="hint">Once purchased, luck upgrades are permanent and improve your spin luck nick ga.</div>
+      </div>
+      <button id="luckCloseBtn">Close</button>
     </div>
   </div>
 
@@ -402,14 +449,30 @@
     const wheelCloseBtn = document.getElementById("wheelCloseBtn");
     const wheelMessage = document.getElementById("wheelMessage");
     const wheelResult = document.getElementById("wheelResult");
-    const wheelSvg = document.getElementById("wheelSvg");
+    const wheelDisplay = document.getElementById("wheelDisplay");
+    const luckButton = document.getElementById("luckButton");
+    const luckModal = document.getElementById("luckModal");
+    const luckCloseBtn = document.getElementById("luckCloseBtn");
+    const luckStatusDisplay = document.getElementById("luckStatusDisplay");
+    const buyLuck1Btn = document.getElementById('buyLuck1');
+    const buyLuck2Btn = document.getElementById('buyLuck2');
+    const buyLuck3Btn = document.getElementById('buyLuck3');
 
     let currentUser = null;
     let currentUsername = null;
     let userWheelData = null;
     let currentCoins = 0;
+    let currentLuckLevel = 0;
     let coinsAwardedThisRun = false;
     const COIN_SPIN_COST = 20;
+    const MAX_LUCK_LEVEL = 3;
+    const LUCK_COSTS = [0, 50, 120, 300];
+    const LUCK_SETTINGS = [
+      { reviveChance: 0.08, tripleChance: 0.02 },
+      { reviveChance: 0.10, tripleChance: 0.03 },
+      { reviveChance: 0.13, tripleChance: 0.05 },
+      { reviveChance: 0.16, tripleChance: 0.07 }
+    ];
 
     // Breath bar
     const breathBarContainer = document.getElementById('breathBarContainer');
@@ -510,11 +573,38 @@
       authModal.style.display = 'none';
     }
 
+    function updateLuckUI() {
+      if (!luckStatusDisplay || !buyLuck1Btn || !buyLuck2Btn || !buyLuck3Btn) return;
+
+      if (!currentUser) {
+        luckStatusDisplay.textContent = 'Sign in to unlock luck upgrades.';
+        buyLuck1Btn.style.display = 'none';
+        buyLuck2Btn.style.display = 'none';
+        buyLuck3Btn.style.display = 'none';
+        return;
+      }
+
+      luckStatusDisplay.textContent = `Current Luck Level: ${currentLuckLevel} — improves wheel odds.`;
+
+      buyLuck1Btn.style.display = 'block';
+      buyLuck2Btn.style.display = 'block';
+      buyLuck3Btn.style.display = 'block';
+
+      buyLuck1Btn.textContent = currentLuckLevel >= 1 ? 'Luck 1 Owned' : `Buy Luck 1 (${LUCK_COSTS[1]} coins)`;
+      buyLuck2Btn.textContent = currentLuckLevel >= 2 ? 'Luck 2 Owned' : `Buy Luck 2 (${LUCK_COSTS[2]} coins)`;
+      buyLuck3Btn.textContent = currentLuckLevel >= 3 ? 'Luck 3 Owned' : `Buy Luck 3 (${LUCK_COSTS[3]} coins)`;
+
+      buyLuck1Btn.disabled = currentLuckLevel >= 1 || currentCoins < LUCK_COSTS[1];
+      buyLuck2Btn.disabled = currentLuckLevel >= 2 || currentCoins < LUCK_COSTS[2];
+      buyLuck3Btn.disabled = currentLuckLevel >= 3 || currentCoins < LUCK_COSTS[3];
+    }
+
     function updateAuthUI() {
       if (currentUser && currentUsername) {
         usernameDisplay.textContent = `${currentUsername}`;
         authBtn.textContent = 'Sign Out';
         wheelButton.style.display = 'block';
+        luckButton.style.display = 'block';
         updateWheelButtonState();
         updateCoinUI();
         authBtn.onclick = async () => {
@@ -528,8 +618,10 @@
         usernameDisplay.textContent = '';
         authBtn.textContent = 'Sign In';
         wheelButton.style.display = 'none';
+        luckButton.style.display = 'none';
         coinsDisplay.textContent = '';
         authBtn.onclick = openAuthModal;
+        updateLuckUI();
       }
     }
 
@@ -551,7 +643,8 @@
         await setDoc(doc(db, "users", user.uid), {
           username,
           createdAt: new Date().toISOString(),
-          coins: 0
+          coins: 0,
+          luckLevel: 0
         });
         showAuthMessage('Account created! Signed in.');
         setTimeout(() => closeAuthModal(), 1000);
@@ -610,6 +703,7 @@
         currentUsername = null;
         userWheelData = null;
         currentCoins = 0;
+        currentLuckLevel = 0;
       }
       updateAuthUI();
     });
@@ -659,117 +753,56 @@
       await submitDailyLeaderboardScore(score);
     }
 
-    /* --------- Wheel Functions --------- */
-    const WHEEL_SEGMENTS = [
-      { label: 'Revive', chance: 0.08, type: 'revive_original' },
-      { label: '3 Revives', chance: 0.02, type: 'triple_revive' },
-      { label: 'Nothing', chance: 0.90, type: 'nothing' }
-    ];
 
-    const WHEEL_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95A5A6'];
-
-    function drawWheel(rotation = 0) {
-      wheelSvg.innerHTML = '';
-      const centerX = 140;
-      const centerY = 140;
-      const radius = 120;
-
-      let currentAngle = rotation;
-      const anglePerSegment = 360 / WHEEL_SEGMENTS.length;
-
-      WHEEL_SEGMENTS.forEach((segment, index) => {
-        const startAngle = (currentAngle * Math.PI) / 180;
-        const endAngle = ((currentAngle + anglePerSegment) * Math.PI) / 180;
-
-        const x1 = centerX + radius * Math.cos(startAngle);
-        const y1 = centerY + radius * Math.sin(startAngle);
-        const x2 = centerX + radius * Math.cos(endAngle);
-        const y2 = centerY + radius * Math.sin(endAngle);
-
-        const largeArc = anglePerSegment > 180 ? 1 : 0;
-
-        const pathData = [
-          `M ${centerX} ${centerY}`,
-          `L ${x1} ${y1}`,
-          `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
-          'Z'
-        ].join(' ');
-
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathData);
-        path.setAttribute('fill', WHEEL_COLORS[index]);
-        path.setAttribute('stroke', '#000');
-        path.setAttribute('stroke-width', '2');
-        wheelSvg.appendChild(path);
-
-        // Text label
-        const midAngle = (startAngle + endAngle) / 2;
-        const textRadius = radius * 0.6;
-        const textX = centerX + textRadius * Math.cos(midAngle);
-        const textY = centerY + textRadius * Math.sin(midAngle);
-
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', textX);
-        text.setAttribute('y', textY);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'central');
-        text.setAttribute('font-size', '12');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('fill', '#000');
-        text.textContent = segment.label.split('\n')[0];
-        wheelSvg.appendChild(text);
-
-        if (segment.label.includes('\n')) {
-          const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text2.setAttribute('x', textX);
-          text2.setAttribute('y', textY + 14);
-          text2.setAttribute('text-anchor', 'middle');
-          text2.setAttribute('dominant-baseline', 'central');
-          text2.setAttribute('font-size', '12');
-          text2.setAttribute('font-weight', 'bold');
-          text2.setAttribute('fill', '#000');
-          text2.textContent = segment.label.split('\n')[1];
-          wheelSvg.appendChild(text2);
-        }
-
-        currentAngle += anglePerSegment;
-      });
+    function getWheelSegments() {
+      const level = Math.max(0, Math.min(MAX_LUCK_LEVEL, currentLuckLevel || 0));
+      const settings = LUCK_SETTINGS[level];
+      return [
+        { label: 'Revive', chance: settings.reviveChance, type: 'revive_original' },
+        { label: '3 Revives', chance: settings.tripleChance, type: 'triple_revive' },
+        { label: 'Nothing', chance: Math.max(0, 1 - settings.reviveChance - settings.tripleChance), type: 'nothing' }
+      ];
     }
 
     function spinWheel() {
       return new Promise((resolve) => {
-        const spins = 5 + Math.random() * 5;
+        const segments = getWheelSegments();
+        
         // Weighted selection based on `chance` field
-        const totalChance = WHEEL_SEGMENTS.reduce((s, seg) => s + (seg.chance || 0), 0);
+        const totalChance = segments.reduce((s, seg) => s + (seg.chance || 0), 0);
         let r = Math.random() * totalChance;
         let selectedIndex = 0;
-        for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
-          const c = WHEEL_SEGMENTS[i].chance || 0;
+        for (let i = 0; i < segments.length; i++) {
+          const c = segments[i].chance || 0;
           if (r <= c) { selectedIndex = i; break; }
           r -= c;
         }
-        const finalRotation = spins * 360 + (selectedIndex * 360) / WHEEL_SEGMENTS.length + 90;
-
-        let currentRotation = 0;
-        const duration = 3000;
+        
+        // Spinning animation parameters
+        const spinDuration = 3000; // 3 seconds
         const startTime = Date.now();
-
+        const spinCount = 5 + Math.random() * 5; // 5-10 full rotations worth
+        const totalSpins = spinCount * segments.length; // Total "positions" to spin through
+        const finalPosition = selectedIndex + (spinCount * segments.length);
+        
         const animate = () => {
           const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-
+          const progress = Math.min(elapsed / spinDuration, 1);
+          
+          // Ease-out cubic for deceleration effect
           const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-          currentRotation = finalRotation * easeOutCubic;
-
-          wheelSvg.style.transform = `rotate(${currentRotation}deg)`;
-
+          const currentPosition = Math.floor(finalPosition * easeOutCubic) % segments.length;
+          
+          wheelDisplay.textContent = segments[currentPosition].label;
+          
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
+            wheelDisplay.textContent = segments[selectedIndex].label;
             resolve(selectedIndex);
           }
         };
-
+        
         animate();
       });
     }
@@ -792,11 +825,14 @@
         if (userSnap.exists()) {
           userWheelData = userSnap.data().wheelData || { lastSpin: null, prizes: [] };
           currentCoins = Number(userSnap.data().coins || 0);
+          currentLuckLevel = Math.max(0, Math.min(MAX_LUCK_LEVEL, Number(userSnap.data().luckLevel || 0)));
         } else {
           userWheelData = { lastSpin: null, prizes: [] };
           currentCoins = 0;
+          currentLuckLevel = 0;
         }
         updateCoinUI();
+        updateLuckUI();
         // Prune prizes older than 24 hours and remove already-used prizes from availability
         const DAY_MS = 24 * 60 * 60 * 1000;
         const now = Date.now();
@@ -836,7 +872,15 @@
       }
     }
 
-    let coinNotificationTimeout = null;
+    async function saveUserLuckLevel(level) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { luckLevel: level }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save luck level:", err);
+      }
+    }
 
     function updateCoinUI() {
       if (currentUser) {
@@ -844,7 +888,10 @@
       } else {
         coinsDisplay.textContent = '';
       }
+      updateLuckUI();
     }
+
+    let coinNotificationTimeout = null;
 
     function showCoinNotification(text) {
       const notification = document.getElementById('coinNotification');
@@ -957,13 +1004,17 @@
 
       wheelButton.disabled = true;
       wheelModal.style.display = 'flex';
-      drawWheel();
+      wheelDisplay.textContent = '';
       wheelMessage.textContent = freeSpin ? 'Spinning...' : 'Spinning (paid spin)...';
       wheelResult.textContent = '';
 
       const selectedIndex = await spinWheel();
-      const selectedSegment = WHEEL_SEGMENTS[selectedIndex];
+      const segments = getWheelSegments();
+      const selectedSegment = segments[selectedIndex];
       const prize = awardPrize(selectedSegment.type);
+
+      // Wait 2 seconds before showing the result
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       wheelMessage.textContent = 'You won!';
       wheelResult.textContent = `${prize.name}\n${prize.desc}`;
@@ -986,16 +1037,50 @@
       await updateWheelButtonState();
     }
 
+    async function purchaseLuckLevel(level) {
+      if (!currentUser) return;
+      const targetLevel = Math.max(0, Math.min(MAX_LUCK_LEVEL, level));
+      if (targetLevel <= currentLuckLevel) return;
+      const cost = LUCK_COSTS[targetLevel];
+      if (currentCoins < cost) {
+        showCoinNotification(`Not enough coins for Luck ${targetLevel}`);
+        return;
+      }
+      currentCoins -= cost;
+      currentLuckLevel = targetLevel;
+      updateCoinUI();
+      updateLuckUI();
+      await saveUserCoinBalance(currentCoins);
+      await saveUserLuckLevel(currentLuckLevel);
+      showCoinNotification(`Luck upgraded to Level ${currentLuckLevel}!`);
+    }
+
+    buyLuck1Btn.addEventListener('click', () => purchaseLuckLevel(1));
+    buyLuck2Btn.addEventListener('click', () => purchaseLuckLevel(2));
+    buyLuck3Btn.addEventListener('click', () => purchaseLuckLevel(3));
+
     wheelButton.addEventListener('click', handleWheelSpin);
     wheelCloseBtn.addEventListener('click', () => {
       wheelModal.style.display = 'none';
-      drawWheel(0);
     });
 
     wheelModal.addEventListener('click', (e) => {
       if (e.target === wheelModal) {
         wheelModal.style.display = 'none';
-        drawWheel(0);
+      }
+    });
+
+    luckButton.addEventListener('click', () => {
+      luckModal.style.display = 'flex';
+    });
+
+    luckCloseBtn.addEventListener('click', () => {
+      luckModal.style.display = 'none';
+    });
+
+    luckModal.addEventListener('click', (e) => {
+      if (e.target === luckModal) {
+        luckModal.style.display = 'none';
       }
     });
 
