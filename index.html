@@ -250,7 +250,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-06-10 @6:36 PM: LAST UPDATE until summer update; added luck for spin wheel and revamped spin wheel UI!</p>
+    <p class="changelog">Changelogs: 2026-06-03 @11:50 AM: Spin the spin wheel when you run out of daily spins for low price of 20 coins (1 coin per e+1) </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original</button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)</button>
@@ -506,6 +506,8 @@
     let gameOver = false;
     let currentLevel = 0;
     let currentMode = 'original'; // 'original', 'escape', or 'guilo'
+    let infinityCount = 0; // number of times infinity has been hit
+    let activeInfinityLabel = '';
 
     // Power-ups
     let activePowerUps = {
@@ -533,6 +535,8 @@
 
     /* ----------------- Firestore global highscores ----------------- */
     const cachedGlobalBest = { original: null, escape: null, guilo: null };
+    const cachedGlobalBestCount = { original: 0, escape: 0, guilo: 0 };
+    const cachedGlobalBestOffset = { original: 0, escape: 0, guilo: 0 };
     const pendingGlobalUpdate = { original: false, escape: false, guilo: false };
     const DAILY_LEADERBOARD_COLLECTION = "dailyLeaderboards";
     let dailyScoreSubmitted = false;
@@ -541,8 +545,27 @@
       return new Date().toISOString().slice(0, 10);
     }
 
-    function formatScoreValue(score) {
-      return `$${Number(score).toFixed(2)}`;
+    function getInfinityOffset() {
+      if (total <= 0) return 0;
+      const exponent = Math.floor(Math.log10(total));
+      return exponent >= 0 ? exponent : 0;
+    }
+
+    function buildInfinityLabel(count, offset = 0) {
+      const eValue = Math.max(0, offset);
+      if (count <= 1) return `infinity (e+${eValue})`;
+      return `infinity ${count} (e+${eValue})`;
+    }
+
+    function formatScoreValue(score, count = 0, offset = 0) {
+      if (count > 0) {
+        return buildInfinityLabel(count, offset);
+      }
+      const numScore = Number(score);
+      if (!Number.isFinite(numScore)) {
+        return buildInfinityLabel(1, offset);
+      }
+      return `$${numScore.toFixed(2)}`;
     }
 
     function renderDailyLeaderboard(entries) {
@@ -550,9 +573,11 @@
         dailyOriginalList.textContent = "No scores yet for today.";
         return;
       }
-      dailyOriginalList.innerHTML = entries.map((entry, index) =>
-        `<div class="row"><div class="label">${index + 1}. ${entry.username ? entry.username : 'Anonymous'}</div><div class="value">${formatScoreValue(entry.score)}</div></div>`
-      ).join('');
+      dailyOriginalList.innerHTML = entries.map((entry, index) => {
+        const infinityCnt = entry.infinityCount || 0;
+        const displayScore = infinityCnt > 0 ? buildInfinityLabel(infinityCnt, entry.infinityOffset || 0) : `$${Number(entry.score).toFixed(2)}`;
+        return `<div class="row"><div class="label">${index + 1}. ${entry.username ? entry.username : 'Anonymous'}</div><div class="value">${displayScore}</div></div>`;
+      }).join('');
     }
 
     /* --------- Auth Functions --------- */
@@ -731,14 +756,22 @@
         
         const scoreEntry = {
           score: Number(score),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          infinityCount: infinityCount || 0,
+          infinityOffset: getInfinityOffset()
         };
         if (currentUser && currentUsername) {
           scoreEntry.username = currentUsername;
         }
         
         currentEntries.push(scoreEntry);
-        currentEntries.sort((a, b) => b.score - a.score);
+        currentEntries.sort((a, b) => {
+          // Sort by infinity count first, then by score
+          if ((a.infinityCount || 0) !== (b.infinityCount || 0)) {
+            return (b.infinityCount || 0) - (a.infinityCount || 0);
+          }
+          return Number(b.score) - Number(a.score);
+        });
         if (currentEntries.length > 3) currentEntries.length = 3;
         await setDoc(dailyRef, { original: currentEntries });
         renderDailyLeaderboard(currentEntries);
@@ -922,14 +955,39 @@
 
     async function awardOriginalCoins(score) {
       if (!currentUser || currentMode !== 'original' || coinsAwardedThisRun) return 0;
-      const coinsEarned = getCoinRewardFromScore(score);
+      
+      let coinsEarned = 0;
+      
+      if (infinityCount > 0) {
+        coinsEarned = 308 * infinityCount + getInfinityOffset();
+      } else {
+        const numericScore = Number(score);
+        if (Number.isFinite(numericScore) && numericScore > 0) {
+          coinsEarned = Math.max(0, Math.floor(Math.log10(Math.abs(numericScore))));
+        }
+      }
+      
       if (coinsEarned <= 0) return 0;
+      
       currentCoins += coinsEarned;
       coinsAwardedThisRun = true;
       updateCoinUI();
       await saveUserCoinBalance(currentCoins);
       showCoinNotification(`💰 Coins earned: +${coinsEarned}`);
       return coinsEarned;
+    }
+
+    async function handleInfinityHit() {
+      infinityCount += 1;
+      activeInfinityLabel = buildInfinityLabel(infinityCount, 0);
+      if (currentMode === 'original' && currentUser) {
+        const coinsBonus = 308;
+        currentCoins += coinsBonus;
+        updateCoinUI();
+        await saveUserCoinBalance(currentCoins);
+        showCoinNotification(`💰 Infinity bonus: +${coinsBonus} coins`);
+      }
+      total = 0.01;
     }
 
     // Mark a prize as used (consumed) in the stored wheel data so revives persist for 24h until used
@@ -1093,21 +1151,30 @@
         const originalBest = originalSnap.exists() ? Number(originalSnap.data().best) : null;
         const escapeBest   = escapeSnap.exists() ? Number(escapeSnap.data().best)   : null;
         const guiloBest    = guiloSnap.exists() ? Number(guiloSnap.data().best)   : null;
+        const originalInfinityCount = originalSnap.exists() ? Number(originalSnap.data().infinityCount || 0) : 0;
+        const escapeInfinityCount = escapeSnap.exists() ? Number(escapeSnap.data().infinityCount || 0) : 0;
+        const guiloInfinityCount = guiloSnap.exists() ? Number(guiloSnap.data().infinityCount || 0) : 0;
 
         let originalDisplay = "No score yet";
         if (originalSnap.exists()) {
           const username = originalSnap.data().username || "Anonymous";
-          originalDisplay = `${username}: $${originalBest.toFixed(2)}`;
+          originalDisplay = originalInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(originalInfinityCount, originalSnap.data().infinityOffset || 0)}`
+            : `${username}: $${originalBest.toFixed(2)}`;
         }
         let escapeDisplay = "No score yet";
         if (escapeSnap.exists()) {
           const username = escapeSnap.data().username || "Anonymous";
-          escapeDisplay = `${username}: $${escapeBest.toFixed(2)}`;
+          escapeDisplay = escapeInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(escapeInfinityCount, escapeSnap.data().infinityOffset || 0)}`
+            : `${username}: $${escapeBest.toFixed(2)}`;
         }
         let guiloDisplay = "No score yet";
         if (guiloSnap.exists()) {
           const username = guiloSnap.data().username || "Anonymous";
-          guiloDisplay = `${username}: $${guiloBest.toFixed(2)}`;
+          guiloDisplay = guiloInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(guiloInfinityCount, guiloSnap.data().infinityOffset || 0)}`
+            : `${username}: $${guiloBest.toFixed(2)}`;
         }
 
         globalOriginalEl.textContent = originalDisplay;
@@ -1117,6 +1184,12 @@
         cachedGlobalBest.original = originalBest;
         cachedGlobalBest.escape = escapeBest;
         cachedGlobalBest.guilo = guiloBest;
+        cachedGlobalBestCount.original = originalInfinityCount;
+        cachedGlobalBestCount.escape = escapeInfinityCount;
+        cachedGlobalBestCount.guilo = guiloInfinityCount;
+        cachedGlobalBestOffset.original = originalSnap.exists() ? originalSnap.data().infinityOffset || 0 : 0;
+        cachedGlobalBestOffset.escape = escapeSnap.exists() ? escapeSnap.data().infinityOffset || 0 : 0;
+        cachedGlobalBestOffset.guilo = guiloSnap.exists() ? guiloSnap.data().infinityOffset || 0 : 0;
         await loadDailyLeaderboard();
       } catch (err) {
         console.error("Failed to load global highscores:", err);
@@ -1127,7 +1200,7 @@
       }
     }
 
-    async function updateGlobalHighscore(mode, score) {
+    async function updateGlobalHighscore(mode, score, infinityCnt = 0) {
       try {
         let docName = 'original';
         if (mode === 'escape') docName = 'escape';
@@ -1136,18 +1209,46 @@
         const ref = doc(db, "highscores", docName);
         const snap = await getDoc(ref);
         const currentBest = snap.exists() ? Number(snap.data().best) : null;
+        const currentBestInfinity = snap.exists() ? Number(snap.data().infinityCount || 0) : 0;
 
-        if (currentBest == null || score > currentBest) {
+        const scoreToSubmit = Number(score);
+        // For comparisons treat non-finite (Infinity/NaN) as extremely large,
+        // but store a finite value in Firestore. This preserves numeric ordering
+        // via `infinityCount` while keeping `best` a double.
+        const compareScore = Number.isFinite(scoreToSubmit) ? scoreToSubmit : Number.MAX_VALUE;
+        let shouldUpdate = false;
+
+        if (currentBest == null) {
+          shouldUpdate = true;
+        } else if (infinityCnt > currentBestInfinity) {
+          shouldUpdate = true;
+        } else if (infinityCnt === currentBestInfinity && compareScore > currentBest) {
+          shouldUpdate = true;
+        }
+
+        if (shouldUpdate) {
           const username = currentUsername || "Anonymous";
-          const scoreData = { best: Number(score), username };
+          const storedBest = Number.isFinite(scoreToSubmit) ? scoreToSubmit : 0; // keep Firestore numeric and finite
+          const offset = getInfinityOffset();
+          const scoreData = {
+            best: storedBest,
+            username,
+            infinityCount: infinityCnt || 0,
+            infinityOffset: infinityCnt > 0 ? offset : 0
+          };
           await setDoc(ref, scoreData);
-          
-          const displayText = `${username}: $${Number(score).toFixed(2)}`;
-          
+
+          const displayText = infinityCnt > 0
+            ? `${username}: ${buildInfinityLabel(infinityCnt, offset)}`
+            : `${username}: $${storedBest.toFixed(2)}`;
+
           if (mode === 'original') globalOriginalEl.textContent = displayText;
           else if (mode === 'escape') globalEscapeEl.textContent = displayText;
           else if (mode === 'guilo') globalGuiloEl.textContent = displayText;
-          cachedGlobalBest[mode === 'escape' ? 'escape' : (mode === 'guilo' ? 'guilo' : 'original')] = Number(score);
+          const key = mode === 'escape' ? 'escape' : (mode === 'guilo' ? 'guilo' : 'original');
+          cachedGlobalBest[key] = storedBest;
+          cachedGlobalBestCount[key] = infinityCnt || 0;
+          cachedGlobalBestOffset[key] = infinityCnt > 0 ? offset : 0;
           return true;
         }
         return false;
@@ -1189,20 +1290,33 @@
     }
 
     function updateUI() {
-      totalDisplay.textContent = `$${total.toFixed(2)}`;
+      if (infinityCount > 0) {
+        activeInfinityLabel = buildInfinityLabel(infinityCount, getInfinityOffset());
+      } else {
+        activeInfinityLabel = '';
+      }
+      const displayValue = activeInfinityLabel || `$${total.toFixed(2)}`;
+      totalDisplay.textContent = displayValue;
+      
       if (total > best) {
         best = parseFloat(total.toFixed(2));
         saveLocalBest(currentMode, best);
       }
       const key = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : 'original');
       const globalBest = cachedGlobalBest[key];
-      const globalBestDisplay = globalBest !== null ? `$${globalBest.toFixed(2)}` : 'No score yet';
+      const globalBestCount = cachedGlobalBestCount[key] || 0;
+      const globalBestDisplay = globalBest !== null ? (
+        globalBestCount > 0
+          ? buildInfinityLabel(globalBestCount, cachedGlobalBestOffset[key] || 0)
+          : `$${globalBest.toFixed(2)}`
+      ) : 'No score yet';
       bestLabel.textContent = `Highscore: ${globalBestDisplay}`;
       checkLevelChange();
       try {
-        if (!pendingGlobalUpdate[key] && (cachedGlobalBest[key] === null || total > cachedGlobalBest[key])) {
+        const currentBestCount = cachedGlobalBestCount[key] || 0;
+        if (!pendingGlobalUpdate[key] && (cachedGlobalBest[key] === null || infinityCount > currentBestCount || (infinityCount === currentBestCount && total > cachedGlobalBest[key]))) {
           pendingGlobalUpdate[key] = true;
-          updateGlobalHighscore(currentMode, total)
+          updateGlobalHighscore(currentMode, total, infinityCount)
             .then((didWrite) => {
               if (didWrite) cachedGlobalBest[key] = total;
             })
@@ -1568,6 +1682,12 @@
           if (type === 'coin') {
             const value = parseFloat((Math.random() * 0.9 + 0.1).toFixed(2));
             total = parseFloat((total + value).toFixed(2));
+            
+            // Check if we've reached infinity and track it
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
             if (currentMode === 'guilo') {
               breath = Math.min(MAX_BREATH, breath + BREATH_RESTORE_PER_COIN);
             }
@@ -1576,6 +1696,11 @@
           } else if (type === 'multiplier') {
             const multiplier = parseFloat((Math.random() * 0.4 + 1.1).toFixed(2));
             total = parseFloat((total * multiplier).toFixed(2));
+            
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
             showOverlay(`✨ Multiplied by x${multiplier.toFixed(2)}`);
             updateUI();
           } else if (type === 'enemy') {
@@ -1583,7 +1708,7 @@
               showOverlay(`You Got Gassed 💀\nCollected: $${total.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
-              try { await updateGlobalHighscore(currentMode, total); } catch (e) { console.warn('Global update on death failed', e); }
+              try { await updateGlobalHighscore(currentMode, total, infinityCount); } catch (e) { console.warn('Global update on death failed', e); }
             } else if (total < 4) {
               const collectedAtDeath = total;
               gameOver = true;
@@ -1591,7 +1716,7 @@
               showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               try {
                 if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
-                await updateGlobalHighscore(currentMode, collectedAtDeath);
+                await updateGlobalHighscore(currentMode, collectedAtDeath, infinityCount);
                 await maybeSubmitDailyOriginalScore(collectedAtDeath);
               } catch (e) { console.warn('Global update on death (enemy) failed', e); }
             } else {
@@ -1622,12 +1747,17 @@
               showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               try {
                 if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
-                await updateGlobalHighscore(currentMode, collectedAtDeath);
+                await updateGlobalHighscore(currentMode, collectedAtDeath, infinityCount);
                 await maybeSubmitDailyOriginalScore(collectedAtDeath);
               } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
             }
           } else if (type === 'x5') {
             total = parseFloat((total * 5).toFixed(2));
+            
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
             showOverlay('💥 x5 Collected!');
             updateUI();
           }
@@ -1689,6 +1819,8 @@
       isPaused = false;
       dailyScoreSubmitted = false;
       coinsAwardedThisRun = false;
+      infinityCount = 0;
+      activeInfinityLabel = '';
       best = loadLocalBest(currentMode);
       // reset stored revives/grants
       activePowerUps.revives = 0;
@@ -1782,7 +1914,7 @@
               showOverlay(`⚠️ Out of Breath!\nCollected: $${total.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
               gameOver = true;
               stopSpawnAndIntervals();
-              updateGlobalHighscore(currentMode, total).catch(e => console.warn('Global update on breath depletion failed', e));
+              updateGlobalHighscore(currentMode, total, infinityCount).catch(e => console.warn('Global update on breath depletion failed', e));
               clearInterval(breathDecayInterval);
             }
             updateBreathUI();
@@ -1813,7 +1945,7 @@
           }
           try {
             if (currentMode === 'original') await awardOriginalCoins(total);
-            await updateGlobalHighscore(currentMode, total);
+            await updateGlobalHighscore(currentMode, total, infinityCount);
             await maybeSubmitDailyOriginalScore(total);
           } catch (e) { console.warn('Global update on back-to-menu failed', e); }
         }
