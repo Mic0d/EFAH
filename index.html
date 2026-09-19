@@ -52,6 +52,15 @@
     }
     #wheelButton:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 30px rgba(255, 165, 0, 0.7); }
     #wheelButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #musicCrateButton {
+      background: linear-gradient(135deg, #7a7cff, #4fd1ff); color: #fff; padding: 12px 18px;
+      border: 2px solid #4fd1ff; border-radius: 10px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(79, 209, 255, 0.45); min-width: 140px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #musicCrateButton:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 30px rgba(79, 209, 255, 0.7); }
+    #musicCrateButton:disabled { opacity: 0.5; cursor: not-allowed; }
     
     #wheelModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -286,7 +295,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-09-15 @4:34 PM: Revamped spin wheel luck values, fixed e & infinity levels, new BETA gamemode, "Eat Big Jar" </p>
+    <p class="changelog">Changelogs: 2026-09-19 @3:17 PM: Music for IOS and mobile is now abailable! Added Low Data Mode and added a settings menu + more!" </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original<small class="modeReviveCount" id="originalReviveButtonCount"></small></button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)<small class="modeReviveCount" id="escapeReviveButtonCount"></small></button>
@@ -322,9 +331,10 @@
       <div class="hint">Daily Top 3 Score Leaderboard</div>
     </div>
 
-    <div style="text-align: center; margin-top: 16px;">
+    <div style="text-align: center; margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
       <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
-      <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 10px;">💎 Spin Luck Upgrades</button>
+      <button id="musicCrateButton" style="display: inline-block;">Settings</button>
+      <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 0;">💎 Spin Luck Upgrades</button>
     </div>
   </div>
 
@@ -338,6 +348,31 @@
       </div>
       <div id="wheelResult"></div>
       <button id="wheelCloseBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="musicCrateModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="background: #1b1b1b; border: 2px solid #4fd1ff; border-radius: 14px; padding: 24px; max-width: 460px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;">
+      <h2 style="margin-top: 0; color: #4fd1ff; font-size: 24px;">Settings</h2>
+      <div id="musicCrateStatus" style="color: #fff; font-size: 18px; font-weight: 700; min-height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">Choose a song.</div>
+      <div id="musicCrateDisplay" style="font-size: 20px; font-weight: 800; color: #7ce0ff; min-height: 60px; display: flex; align-items: center; justify-content: center; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Hava Nagila</div>
+      <div id="musicCrateResult" style="color: #7ce0ff; font-size: 20px; font-weight: 800; min-height: 50px; margin-bottom: 16px;">Current song: <span id="currentMusicLabel">Hava Nagila</span></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <button id="equipMusicHava" class="menuBtn tertiary" style="width: 100%; background: #4a9eff; color: #fff;">Equip Hava Nagila</button>
+        <button id="equipMusicWell" class="menuBtn tertiary" style="width: 100%; background: #4a9eff; color: #fff;">Equip Well Well Well</button>
+      </div>
+      <div style="margin-bottom: 16px; text-align: left; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px;">
+        <label style="display: flex; align-items: center; justify-content: space-between; gap:12px; font-weight:700; color:#fff; margin-bottom: 12px;">
+          <span>Low Data Mode</span>
+          <input id="lowDataModeToggle" type="checkbox">
+        </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap:12px; font-weight:700; color:#fff;">
+          <span>Include music</span>
+          <input id="includeMusicToggle" type="checkbox" checked>
+        </label>
+      </div>
+      <button id="musicCrateCloseBtn" style="background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer;">Close</button>
     </div>
   </div>
 
@@ -425,7 +460,7 @@
       <button class="snakeControl right" data-direction="right" aria-label="Move right">&#9654;</button>
     </div>
     <audio id="level5Sound" src="https://www.dropbox.com/scl/fi/jctlk81ahgqj1kjzhmudo/20240826_162113_Normal.m4a?rlkey=m4jl220rn4vllphoyqkcvcnxx&st=f6abz5at&dl=1"></audio>
-    <audio id="backgroundMusic" src="https://www.dropbox.com/scl/fi/xlw2o61mygmu266weyp6j/1207.MP3?rlkey=6beigh8cy7kech6ys6vokjmcj&st=a5ohqaml&dl=1" loop></audio>
+    <audio id="backgroundMusic" preload="auto" loop></audio>
   </div>
 
   <!-- Firebase + Firestore (modular v10 CDN) -->
@@ -505,11 +540,22 @@
 
     // Wheel UI
     const wheelButton = document.getElementById("wheelButton");
+    const musicCrateButton = document.getElementById("musicCrateButton");
     const wheelModal = document.getElementById("wheelModal");
     const wheelCloseBtn = document.getElementById("wheelCloseBtn");
     const wheelMessage = document.getElementById("wheelMessage");
     const wheelResult = document.getElementById("wheelResult");
     const wheelDisplay = document.getElementById("wheelDisplay");
+    const musicCrateModal = document.getElementById("musicCrateModal");
+    const musicCrateCloseBtn = document.getElementById("musicCrateCloseBtn");
+    const musicCrateStatus = document.getElementById("musicCrateStatus");
+    const musicCrateDisplay = document.getElementById("musicCrateDisplay");
+    const musicCrateResult = document.getElementById("musicCrateResult");
+    const currentMusicLabel = document.getElementById("currentMusicLabel");
+    const equipMusicHavaBtn = document.getElementById("equipMusicHava");
+    const equipMusicWellBtn = document.getElementById("equipMusicWell");
+    const lowDataModeToggle = document.getElementById("lowDataModeToggle");
+    const includeMusicToggle = document.getElementById("includeMusicToggle");
     const luckButton = document.getElementById("luckButton");
     const luckModal = document.getElementById("luckModal");
     const luckCloseBtn = document.getElementById("luckCloseBtn");
@@ -548,6 +594,18 @@
     const breathBarFill = document.getElementById('breathBarFill');
     const level5Sound = document.getElementById('level5Sound');
     const backgroundMusic = document.getElementById('backgroundMusic');
+    const MUSIC_TRACKS = {
+      havanagila: 'https://dl.dropboxusercontent.com/scl/fi/xlw2o61mygmu266weyp6j/1207.MP3?rlkey=6beigh8cy7kech6ys6vokjmcj&st=a5ohqaml&dl=1',
+      wellwellwell: 'https://dl.dropboxusercontent.com/scl/fi/f1nagx1cvim5jk5xn6fsk/WellWellWellofficial1.MP3?rlkey=s8yurbeuty44bfhmoxsmkc0ko&st=l8cjkqv2&dl=1'
+    };
+    const MUSIC_TRACK_LABELS = {
+      havanagila: 'Hava Nagila',
+      wellwellwell: 'Well Well Well'
+    };
+    let selectedMusicTrack = localStorage.getItem('bigjarMusicTrack') || 'havanagila';
+    let musicCrateSpinTimer = null;
+    let lowDataMode = localStorage.getItem('bigjarLowDataMode') === 'true';
+    let includeMusicWhenLowData = localStorage.getItem('bigjarIncludeMusicLowData') !== 'false';
 
     /* ----------------- Assets & thresholds ----------------- */
     const IMG_DEFAULT = 'https://www.pngkey.com/png/detail/327-3272410_jews-laughing-meme-png-jews-laughing-meme-evil.png';
@@ -716,9 +774,11 @@
         usernameDisplay.textContent = `${currentUsername}`;
         authBtn.textContent = 'Sign Out';
         wheelButton.style.display = 'block';
+        musicCrateButton.style.display = 'block';
         luckButton.style.display = 'block';
         updateWheelButtonState();
         updateCoinUI();
+        updateMusicCrateButtonState();
         authBtn.onclick = async () => {
           try {
             await signOut(auth);
@@ -730,6 +790,7 @@
         usernameDisplay.textContent = '';
         authBtn.textContent = 'Sign In';
         wheelButton.style.display = 'none';
+        musicCrateButton.style.display = 'none';
         luckButton.style.display = 'none';
         coinsDisplay.textContent = '';
         authBtn.onclick = openAuthModal;
@@ -931,11 +992,23 @@
     function awardPrize(prizeType) {
       const prizeMap = {
         'revive_original': { name: 'Revive', desc: 'Revive once in Original mode!' },
-        // 'speed_boost' removed — slot replaced with nothing
         'triple_revive': { name: 'Triple Revive', desc: '3 revives for Escape mode!' },
+        'music_crate': { name: 'Music Crate', desc: 'Use your crate to unlock a music track!' },
         'nothing': { name: 'Nothing', desc: 'Better luck next time, nikka!' }
       };
       return prizeMap[prizeType] || { name: 'Unknown', desc: '' };
+    }
+
+    function getMusicCrateCount() {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return 0;
+      return userWheelData.prizes.filter(prize => prize && prize.type === 'music_crate' && !prize.used).length;
+    }
+
+    function updateMusicCrateButtonState() {
+      if (!musicCrateButton) return;
+      musicCrateButton.style.display = 'inline-block';
+      musicCrateButton.disabled = false;
+      musicCrateButton.textContent = 'Settings';
     }
 
     async function loadWheelData() {
@@ -967,6 +1040,7 @@
           await saveWheelData(userWheelData);
         }
         updateReviveInventoryUI();
+        updateMusicCrateButtonState();
         return userWheelData;
       } catch (err) {
         console.error("Failed to load wheel data:", err);
@@ -1011,6 +1085,7 @@
         coinsDisplay.textContent = '';
       }
       updateLuckUI();
+      updateMusicCrateButtonState();
     }
 
     let coinNotificationTimeout = null;
@@ -1182,10 +1257,13 @@
         }
       } else if (selectedSegment.type === 'revive_original') {
         userWheelData.prizes.push({ type: selectedSegment.type, awardedAt });
+      } else if (selectedSegment.type === 'music_crate') {
+        userWheelData.prizes.push({ type: 'music_crate', awardedAt });
       }
 
       await saveWheelData(userWheelData);
       updateReviveInventoryUI();
+      updateMusicCrateButtonState();
       await updateWheelButtonState();
     }
 
@@ -1211,14 +1289,186 @@
     buyLuck2Btn.addEventListener('click', () => purchaseLuckLevel(2));
     buyLuck3Btn.addEventListener('click', () => purchaseLuckLevel(3));
 
+    function canLoadMusic() {
+      return !lowDataMode || includeMusicWhenLowData;
+    }
+
+    function updateLowDataControls() {
+      if (lowDataModeToggle) lowDataModeToggle.checked = lowDataMode;
+      if (includeMusicToggle) {
+        includeMusicToggle.checked = includeMusicWhenLowData;
+        includeMusicToggle.disabled = !lowDataMode;
+      }
+    }
+
+    function updateCurrentMusicLabel() {
+      const label = MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila';
+      if (currentMusicLabel) currentMusicLabel.textContent = label;
+      if (musicCrateDisplay) musicCrateDisplay.textContent = label;
+    }
+
+    function setBackgroundMusic(trackKey, shouldPlay = false) {
+      if (!MUSIC_TRACKS[trackKey]) return;
+      selectedMusicTrack = trackKey;
+      localStorage.setItem('bigjarMusicTrack', trackKey);
+      if (!canLoadMusic()) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.removeAttribute('src');
+        return;
+      }
+      backgroundMusic.src = MUSIC_TRACKS[trackKey];
+      backgroundMusic.load();
+      backgroundMusic.loop = true;
+      backgroundMusic.volume = 0.55;
+      backgroundMusic.muted = false;
+      updateCurrentMusicLabel();
+
+      if (shouldPlay && (currentMode === 'original' || currentMode === 'snake')) {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play().catch(() => {
+          console.warn('Music playback is waiting for user activation on this device.');
+        });
+      } else {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+      }
+    }
+
+    function stopBackgroundMusic() {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.removeAttribute('src');
+    }
+
+    function animateMusicCrateDisplay(trackKey) {
+      const options = ['Hava Nagila', 'Well Well Well'];
+      let index = 0;
+      if (musicCrateSpinTimer) clearInterval(musicCrateSpinTimer);
+      musicCrateSpinTimer = setInterval(() => {
+        if (musicCrateDisplay) {
+          musicCrateDisplay.textContent = options[index % options.length];
+          index += 1;
+        }
+      }, 120);
+
+      setTimeout(() => {
+        if (musicCrateSpinTimer) {
+          clearInterval(musicCrateSpinTimer);
+          musicCrateSpinTimer = null;
+        }
+        if (musicCrateDisplay) {
+          musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila';
+        }
+      }, 1600);
+    }
+
+    function equipMusicTrack(trackKey) {
+      if (!MUSIC_TRACKS[trackKey]) return;
+      selectedMusicTrack = trackKey;
+      localStorage.setItem('bigjarMusicTrack', trackKey);
+      updateCurrentMusicLabel();
+      setBackgroundMusic(trackKey, false);
+      musicCrateStatus.textContent = 'Current selection:';
+      musicCrateResult.textContent = `${MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila'}`;
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila';
+    }
+
+    function openMusicCrateMenu() {
+      musicCrateModal.style.display = 'flex';
+      musicCrateStatus.textContent = getMusicCrateCount() > 0 ? 'Crate credit ready!' : 'Choose a song below';
+      musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila'}`;
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila';
+      updateLowDataControls();
+      updateCurrentMusicLabel();
+    }
+
+    async function useMusicCrate() {
+      if (!currentUser) {
+        openMusicCrateMenu();
+        return;
+      }
+
+      if (getMusicCrateCount() <= 0) {
+        openMusicCrateMenu();
+        musicCrateStatus.textContent = 'No crate credits available — choose a song below';
+        musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila'}`;
+        return;
+      }
+
+      const rolledTrack = Math.random() < 0.5 ? 'havanagila' : 'wellwellwell';
+      selectedMusicTrack = rolledTrack;
+      localStorage.setItem('bigjarMusicTrack', rolledTrack);
+
+      musicCrateModal.style.display = 'flex';
+      musicCrateStatus.textContent = 'Spinning the crate...';
+      musicCrateResult.textContent = 'Current song: ' + (MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila');
+      animateMusicCrateDisplay(rolledTrack);
+
+      await new Promise(resolve => setTimeout(resolve, 1600));
+      musicCrateStatus.textContent = 'You rolled:';
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[rolledTrack] || 'Hava Nagila';
+      musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[rolledTrack] || 'Hava Nagila'}`;
+      updateCurrentMusicLabel();
+
+      if (currentMode === 'original' || currentMode === 'snake') {
+        setBackgroundMusic(rolledTrack, true);
+      } else {
+        setBackgroundMusic(rolledTrack, false);
+      }
+
+      const prizeIndex = userWheelData.prizes.findIndex(prize => prize && prize.type === 'music_crate' && !prize.used);
+      if (prizeIndex >= 0) {
+        userWheelData.prizes[prizeIndex].used = true;
+        userWheelData.prizes[prizeIndex].usedAt = new Date().toISOString();
+        await saveWheelData(userWheelData);
+      }
+      updateMusicCrateButtonState();
+    }
+
+    lowDataModeToggle.addEventListener('change', () => {
+      lowDataMode = lowDataModeToggle.checked;
+      localStorage.setItem('bigjarLowDataMode', String(lowDataMode));
+      updateLowDataControls();
+      if (!canLoadMusic()) {
+        stopBackgroundMusic();
+      } else if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      } else {
+        stopBackgroundMusic();
+      }
+    });
+
+    includeMusicToggle.addEventListener('change', () => {
+      includeMusicWhenLowData = includeMusicToggle.checked;
+      localStorage.setItem('bigjarIncludeMusicLowData', String(includeMusicWhenLowData));
+      if (!canLoadMusic()) {
+        stopBackgroundMusic();
+      } else if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      }
+    });
+
     wheelButton.addEventListener('click', handleWheelSpin);
+    musicCrateButton.addEventListener('click', openMusicCrateMenu);
+    equipMusicHavaBtn.addEventListener('click', () => equipMusicTrack('havanagila'));
+    equipMusicWellBtn.addEventListener('click', () => equipMusicTrack('wellwellwell'));
     wheelCloseBtn.addEventListener('click', () => {
       wheelModal.style.display = 'none';
+    });
+    musicCrateCloseBtn.addEventListener('click', () => {
+      musicCrateModal.style.display = 'none';
     });
 
     wheelModal.addEventListener('click', (e) => {
       if (e.target === wheelModal) {
         wheelModal.style.display = 'none';
+      }
+    });
+
+    musicCrateModal.addEventListener('click', (e) => {
+      if (e.target === musicCrateModal) {
+        musicCrateModal.style.display = 'none';
       }
     });
 
@@ -1380,6 +1630,12 @@
 
     /* ----------------- Helpers ----------------- */
     function setPlayerImageForLevel(level) {
+      if (lowDataMode) {
+        playerEl.style.backgroundImage = 'none';
+        playerEl.style.backgroundColor = '#ffffff';
+        playerEl.style.border = '2px solid rgba(0,0,0,0.15)';
+        return;
+      }
       if (level === 4) playerEl.style.backgroundImage = `url('${IMG_LEVEL4}')`;
       else if (level === 3) playerEl.style.backgroundImage = `url('${IMG_LEVEL3}')`;
       else if (level === 2) playerEl.style.backgroundImage = `url('${IMG_LEVEL2}')`;
@@ -1387,6 +1643,8 @@
       else playerEl.style.backgroundImage = `url('${IMG_DEFAULT}')`;
       if (level === 6) playerEl.style.backgroundImage = `url('${IMG_LEVEL6}')`;
       else if (level === 5) playerEl.style.backgroundImage = `url('${IMG_LEVEL5}')`;
+      playerEl.style.backgroundColor = '#ffd';
+      playerEl.style.border = '2px solid rgba(0,0,0,0.18)';
     }
 
     function effectiveForScaling() {
@@ -1553,6 +1811,21 @@
         snakeContext.moveTo(0, row * cellHeight);
         snakeContext.lineTo(snakeBoard.width, row * cellHeight);
         snakeContext.stroke();
+      }
+      if (lowDataMode) {
+        snakeContext.fillStyle = '#ffbf3f';
+        snakeContext.fillRect(snakeFood.x * cellWidth, snakeFood.y * cellHeight, cellWidth, cellHeight);
+        snakeBody.forEach((segment, index) => {
+          const previous = snakePreviousBody[index] || {
+            x: segment.x - snakeDirection.x,
+            y: segment.y - snakeDirection.y
+          };
+          const x = (previous.x + (segment.x - previous.x) * progress) * cellWidth;
+          const y = (previous.y + (segment.y - previous.y) * progress) * cellHeight;
+          snakeContext.fillStyle = index === 0 ? '#ffffff' : '#dfe8ff';
+          snakeContext.fillRect(x, y, cellWidth, cellHeight);
+        });
+        return;
       }
       if (snakeEnemyImage.complete && snakeEnemyImage.naturalWidth > 0) {
         snakeContext.drawImage(snakeEnemyImage, snakeFood.x * cellWidth, snakeFood.y * cellHeight, cellWidth, cellHeight);
@@ -1777,6 +2050,11 @@
         big.className = 'bigEnemy';
         big.style.left = spawnX + 'px';
         big.style.top = '-160px';
+        if (lowDataMode) {
+          big.style.backgroundImage = 'none';
+          big.style.backgroundColor = '#ff7a7a';
+          big.style.border = '2px solid rgba(255,255,255,0.25)';
+        }
         gameArea.appendChild(big);
         activeElements.add(big);
 
@@ -1814,6 +2092,11 @@
           el.className = 'enemy';
           el.style.left = spawnX + 'px';
           el.style.top = '0px';
+          if (lowDataMode) {
+            el.style.backgroundImage = 'none';
+            el.style.backgroundColor = '#ff5d5d';
+            el.style.border = '2px solid rgba(255,255,255,0.25)';
+          }
           gameArea.appendChild(el);
           activeElements.add(el);
           startFall(el, 'enemy');
@@ -1825,9 +2108,15 @@
         el.style.top = '0px';
         el.className = isEnemy ? 'enemy' : 'coin';
         if (isEnemy) {
-          el.style.backgroundImage = `url('${IMG_GUILO_ENEMY}')`;
-          el.style.backgroundSize = 'cover';
-          el.style.backgroundPosition = 'center';
+          if (lowDataMode) {
+            el.style.backgroundImage = 'none';
+            el.style.backgroundColor = '#7ec8ff';
+            el.style.border = '2px solid rgba(255,255,255,0.2)';
+          } else {
+            el.style.backgroundImage = `url('${IMG_GUILO_ENEMY}')`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+          }
         }
         gameArea.appendChild(el);
         activeElements.add(el);
@@ -1860,6 +2149,11 @@
         el.style.left = spawnX + 'px';
         el.style.top = '0px';
         el.className = isEnemy ? 'enemy' : 'coin';
+        if (lowDataMode) {
+          el.style.backgroundImage = 'none';
+          el.style.backgroundColor = isEnemy ? '#ff5d5d' : '#ffd93d';
+          el.style.border = isEnemy ? '2px solid rgba(255,255,255,0.25)' : '2px solid rgba(255,255,255,0.2)';
+        }
         gameArea.appendChild(el);
         activeElements.add(el);
 
@@ -2082,6 +2376,20 @@
       backgroundMusic.currentTime = 0;
     }
 
+    function playSelectedMusic() {
+      if (!backgroundMusic) return;
+      const shouldPlay = currentMode === 'original' || currentMode === 'snake';
+      if (!shouldPlay) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.removeAttribute('src');
+        return;
+      }
+
+      const trackKey = MUSIC_TRACKS[selectedMusicTrack] ? selectedMusicTrack : 'havanagila';
+      setBackgroundMusic(trackKey, true);
+    }
+
     function resetGameState() {
       stopSpawnAndIntervals();
       total = 0;
@@ -2108,6 +2416,9 @@
       pendingGlobalUpdate[mk] = false;
       backgroundMusic.pause();
       backgroundMusic.currentTime = 0;
+      if (currentMode !== 'original' && currentMode !== 'snake') {
+        backgroundMusic.removeAttribute('src');
+      }
       // Ensure mobile slider is not left centered after reset
       mobileSliderWrap.classList.remove('centered');
     }
@@ -2164,10 +2475,9 @@
         applyPowerUps().catch(e => console.warn('Failed to apply power-ups:', e));
       }
 
-      // Play background music only in Original mode
-      if (currentMode === 'original') {
-        backgroundMusic.currentTime = 0;
-        backgroundMusic.play().catch(e => console.warn('Failed to play background music:', e));
+      // Play music for Original and Eat Big Jar modes
+      if (currentMode === 'original' || currentMode === 'snake') {
+        playSelectedMusic();
       }
 
       if (currentMode === 'snake') {
@@ -2210,19 +2520,30 @@
         activeIntervals.add(breathDecayInterval);
       }
 
-      // Play background music for Original mode
-      if (currentMode === 'original') {
-        backgroundMusic.currentTime = 0;
-        backgroundMusic.play().catch(e => console.warn('Failed to play background music:', e));
+      // Play music for Original and Eat Big Jar modes only when allowed by the settings
+      if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      } else {
+        stopBackgroundMusic();
       }
       spawnLoop();
     }
 
     /* ----------------- UI bindings ----------------- */
-    playOriginalBtn.addEventListener('click', () => startGame('original'));
+    playOriginalBtn.addEventListener('click', () => {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      if (canLoadMusic()) setBackgroundMusic(selectedMusicTrack, true);
+      startGame('original');
+    });
     playEscapeBtn.addEventListener('click', () => startGame('escape'));
     playGuiloBtn.addEventListener('click', () => startGame('guilo'));
-    playSnakeBtn.addEventListener('click', () => startGame('snake'));
+    playSnakeBtn.addEventListener('click', () => {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      if (canLoadMusic()) setBackgroundMusic(selectedMusicTrack, true);
+      startGame('snake');
+    });
 
     backToMenuBtn.addEventListener('click', async () => {
       try {
@@ -2263,13 +2584,13 @@
     });
 
     pauseBtn.addEventListener('click', () => {
-      if (currentMode !== 'original' || gameOver) return;
+      if ((currentMode !== 'original' && currentMode !== 'snake') || gameOver) return;
       isPaused = !isPaused;
       pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
       if (isPaused) {
         backgroundMusic.pause();
       } else {
-        backgroundMusic.play().catch(e => console.warn('Failed to resume music:', e));
+        playSelectedMusic();
         // Resume spawning
         if (spawnTimeoutId === null) {
           spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
@@ -2281,6 +2602,13 @@
     });
 
     /* ----------------- Init ----------------- */
+    if (!MUSIC_TRACKS[selectedMusicTrack]) {
+      selectedMusicTrack = 'havanagila';
+    }
+    stopBackgroundMusic();
+    updateLowDataControls();
+    updateCurrentMusicLabel();
+
     setPlayerImageForLevel(0);
     initPlayerPosition();
     best = loadLocalBest('original');
