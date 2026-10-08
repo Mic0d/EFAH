@@ -42,6 +42,37 @@
     .modeLabel { color: #ddd; font-weight: 700; margin-bottom: 4px; }
     .modeScore { color: #fff; font-weight: 800; }
     .hint { color: #888; font-size: 12px; margin-top: 8px; }
+
+    body.christmas { background: #071a12; color: #f7f1e3; }
+    body.christmas #menu h1 { color: #e8c86a; text-shadow: 0 2px 12px rgba(190, 30, 45, 0.55); }
+    body.christmas #globalBox,
+    body.christmas #dailyBox { background: #10291d; border-color: #8d2635; }
+    body.christmas #globalBox h2,
+    body.christmas #dailyBox h2 { color: #e8c86a; }
+    body.christmas #menu .changelog { color: #d3c7a3; }
+    body.christmas .modeLabel { color: #f3dfb0; }
+    body.christmas .modeScore,
+    body.christmas #dailyOriginalList { color: #f7f1e3; }
+    body.christmas .hint { color: #a9c7ae; }
+    body.christmas #usernameDisplay { color: #a8d8b2 !important; }
+    body.christmas .menuBtn:not(.tertiary) { background: #f2ead8; color: #173322; }
+    body.christmas .menuBtn.tertiary { background: #a92336; color: #fff; }
+    body.christmas #playSnake { background: #174c32 !important; color: #d6f3cd !important; }
+    body.christmas #gameArea { background: linear-gradient(180deg, #1c5438, #10291d); border-color: #8d2635; }
+    body.christmas #scoreboard { background: #f2ead8; color: #173322; }
+    body.christmas #bestLabel { color: #45634e; }
+
+    #adminThemeModal {
+      display: none; position: fixed; inset: 0; z-index: 2600; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.82);
+    }
+    #adminThemeContent {
+      width: min(360px, calc(100vw - 40px)); padding: 22px; text-align: left;
+      background: #1b1b1b; border: 1px solid #555; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+    }
+    #adminThemeContent h2 { margin: 0 0 18px; }
+    #adminThemeSelect { width: 100%; margin: 8px 0 4px; padding: 10px; border-radius: 6px; font-weight: 700; }
+    #adminThemeStatus { min-height: 18px; margin-top: 10px; color: #aaa; font-size: 12px; }
     
     /* Daily Wheel */
     #wheelButton {
@@ -288,7 +319,7 @@
   <!-- Main Menu -->
   <div id="menu">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h1 style="margin: 0; flex: 1;">Big Jar</h1>
+      <h1 id="gameTitle" style="margin: 0; flex: 1;">Big Jar</h1>
       <div id="authContainer" style="display: flex; gap: 8px; align-items: center;">
         <span id="coinsDisplay" style="color: #ffd700; font-weight: 700; font-size: 14px;"></span>
         <span id="usernameDisplay" style="color: #4a9eff; font-weight: 700; font-size: 14px;"></span>
@@ -301,6 +332,7 @@
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)<small class="modeReviveCount" id="escapeReviveButtonCount"></small></button>
       <button class="menuBtn tertiary" id="playGuilo">Escape</button>
       <button class="menuBtn" id="playSnake" style="background:#183b27;color:#9bffb2;">Eat Big Jar</button>
+      <button class="menuBtn secondary" id="adminThemeButton" style="display:none;">Admin Panel</button>
     </div>
 
     <!-- Global highscores (Firestore) -->
@@ -335,6 +367,19 @@
       <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
       <button id="musicCrateButton" style="display: inline-block;">Settings</button>
       <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 0;">💎 Spin Luck Upgrades</button>
+    </div>
+  </div>
+
+  <div id="adminThemeModal" role="dialog" aria-modal="true" aria-labelledby="adminThemeHeading">
+    <div id="adminThemeContent">
+      <h2 id="adminThemeHeading">Admin Panel</h2>
+      <label for="adminThemeSelect" style="font-weight:700;">Theme</label>
+      <select id="adminThemeSelect">
+        <option value="regular">Regular</option>
+        <option value="christmas">Christmas</option>
+      </select>
+      <div id="adminThemeStatus" aria-live="polite"></div>
+      <button id="adminThemeClose" class="menuBtn secondary" style="margin-top:12px;">Close</button>
     </div>
   </div>
 
@@ -468,7 +513,7 @@
     /* ----------------- Firebase setup with Auth ----------------- */
     import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAnalytics }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       getAuth,
       createUserWithEmailAndPassword,
@@ -512,6 +557,11 @@
     const playEscapeBtn = document.getElementById('playEscape');
     const playGuiloBtn = document.getElementById('playGuilo');
     const playSnakeBtn = document.getElementById('playSnake');
+    const adminThemeButton = document.getElementById('adminThemeButton');
+    const adminThemeModal = document.getElementById('adminThemeModal');
+    const adminThemeSelect = document.getElementById('adminThemeSelect');
+    const adminThemeStatus = document.getElementById('adminThemeStatus');
+    const adminThemeClose = document.getElementById('adminThemeClose');
     const globalSnakeEl = document.getElementById("globalSnake");
     const snakeBoard = document.getElementById('snakeBoard');
     const snakeControls = document.getElementById('snakeControls');
@@ -563,6 +613,51 @@
     const buyLuck1Btn = document.getElementById('buyLuck1');
     const buyLuck2Btn = document.getElementById('buyLuck2');
     const buyLuck3Btn = document.getElementById('buyLuck3');
+
+    const GAME_THEME_REF = doc(db, 'globalSettings', 'gameTheme');
+    let activeTheme = 'regular';
+
+    function applyTheme(theme) {
+      activeTheme = theme === 'christmas' ? 'christmas' : 'regular';
+      document.body.classList.toggle('christmas', activeTheme === 'christmas');
+      if (adminThemeSelect) adminThemeSelect.value = activeTheme;
+    }
+
+    onSnapshot(GAME_THEME_REF, (snapshot) => {
+      applyTheme(snapshot.exists() ? snapshot.data().theme : 'regular');
+      if (adminThemeStatus) adminThemeStatus.textContent = '';
+    }, (error) => {
+      console.error('Failed to listen for game theme changes:', error);
+      if (adminThemeStatus) adminThemeStatus.textContent = 'Could not load the shared theme setting.';
+    });
+
+    async function saveGlobalTheme(theme) {
+      if (currentUsername !== 'admin') return;
+      const selectedTheme = theme === 'christmas' ? 'christmas' : 'regular';
+      const previousTheme = activeTheme;
+      applyTheme(selectedTheme);
+      adminThemeStatus.textContent = 'Saving theme...';
+      try {
+        await setDoc(GAME_THEME_REF, { theme: selectedTheme }, { merge: true });
+        adminThemeStatus.textContent = 'Theme updated for all players.';
+      } catch (error) {
+        console.error('Failed to save game theme:', error);
+        applyTheme(previousTheme);
+        adminThemeStatus.textContent = 'Could not save. Check Firestore permissions.';
+      }
+    }
+
+    adminThemeButton.addEventListener('click', () => {
+      if (currentUsername !== 'admin') return;
+      adminThemeSelect.value = activeTheme;
+      adminThemeStatus.textContent = '';
+      adminThemeModal.style.display = 'flex';
+    });
+    adminThemeSelect.addEventListener('change', () => saveGlobalTheme(adminThemeSelect.value));
+    adminThemeClose.addEventListener('click', () => { adminThemeModal.style.display = 'none'; });
+    adminThemeModal.addEventListener('click', (event) => {
+      if (event.target === adminThemeModal) adminThemeModal.style.display = 'none';
+    });
 
     let currentUser = null;
     let currentUsername = null;
@@ -770,6 +865,7 @@
     }
 
     function updateAuthUI() {
+      adminThemeButton.style.display = currentUser && currentUsername === 'admin' ? 'inline-block' : 'none';
       if (currentUser && currentUsername) {
         usernameDisplay.textContent = `${currentUsername}`;
         authBtn.textContent = 'Sign Out';
