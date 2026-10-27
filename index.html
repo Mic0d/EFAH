@@ -62,17 +62,43 @@
     body.christmas #scoreboard { background: #f2ead8; color: #173322; }
     body.christmas #bestLabel { color: #45634e; }
 
+    body.halloween { background: #171018; color: #f7e9d4; }
+    body.halloween #menu h1 { color: #ff9a32; text-shadow: 0 2px 12px rgba(255, 91, 20, 0.6); }
+    body.halloween #globalBox,
+    body.halloween #dailyBox { background: #241828; border-color: #713b78; }
+    body.halloween #globalBox h2,
+    body.halloween #dailyBox h2 { color: #ffad52; }
+    body.halloween #menu .changelog { color: #c9a9c5; }
+    body.halloween .modeLabel { color: #e8c8e5; }
+    body.halloween .modeScore,
+    body.halloween #dailyOriginalList { color: #f7e9d4; }
+    body.halloween .hint { color: #b7a0b7; }
+    body.halloween #usernameDisplay { color: #ffad52 !important; }
+    body.halloween .menuBtn:not(.tertiary) { background: #f1e4d3; color: #301b32; }
+    body.halloween .menuBtn.tertiary { background: #713b78; color: #fff; }
+    body.halloween #playSnake { background: #4a2d4d !important; color: #f6d8ff !important; }
+    body.halloween #gameArea { background: linear-gradient(180deg, #47243f, #241828); border-color: #b45b2a; }
+    body.halloween #scoreboard { background: #f1e4d3; color: #301b32; }
+    body.halloween #bestLabel { color: #69466c; }
+
     #adminThemeModal {
       display: none; position: fixed; inset: 0; z-index: 2600; align-items: center; justify-content: center;
       background: rgba(0,0,0,0.82);
     }
     #adminThemeContent {
-      width: min(360px, calc(100vw - 40px)); padding: 22px; text-align: left;
+      width: min(460px, calc(100vw - 40px)); max-height: calc(100vh - 40px); overflow-y: auto;
+      padding: 22px; text-align: left;
       background: #1b1b1b; border: 1px solid #555; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.7);
     }
     #adminThemeContent h2 { margin: 0 0 18px; }
     #adminThemeSelect { width: 100%; margin: 8px 0 4px; padding: 10px; border-radius: 6px; font-weight: 700; }
     #adminThemeStatus { min-height: 18px; margin-top: 10px; color: #aaa; font-size: 12px; }
+    #specialSpinAdminSection { margin-top: 18px; padding-top: 14px; border-top: 1px solid #444; }
+    #specialSpinAdminSection h3 { margin: 0 0 10px; font-size: 15px; }
+    #specialSpinEnabledLabel { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+    #specialSpinStatus { min-height: 18px; margin-top: 8px; color: #aaa; font-size: 12px; }
+    #specialSpinWinnerList { max-height: 180px; overflow-y: auto; color: #ddd; font-size: 13px; }
+    .specialSpinWinner { padding: 8px 0; border-top: 1px solid #333; }
     
     /* Daily Wheel */
     #wheelButton {
@@ -113,6 +139,48 @@
       background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
       font-weight: 800; cursor: pointer; margin-top: 16px;
     }
+
+    #halloweenWheelButton {
+      display: none; background: linear-gradient(135deg, #ff9a32, #713b78); color: #fff;
+      border: 2px solid #ffad52; padding: 12px 18px; border-radius: 10px; font-weight: 800;
+      cursor: pointer; min-width: 180px; box-shadow: 0 8px 24px rgba(255, 130, 40, 0.35);
+    }
+    #halloweenWheelButton:disabled { opacity: 0.5; cursor: not-allowed; }
+    #halloweenWheelModal {
+      display: none; position: fixed; inset: 0; z-index: 2500; align-items: center;
+      justify-content: center; padding: 16px; background: rgba(0,0,0,0.88);
+    }
+    #halloweenWheelContent {
+      width: min(440px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
+      padding: 22px; border: 2px solid #b45b2a; border-radius: 12px; background: #241828;
+      color: #f7e9d4; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+    }
+    #halloweenWheelContent h2 { margin: 0 0 8px; color: #ffad52; }
+    #halloweenWheelStage { position: relative; width: min(72vw, 280px); aspect-ratio: 1; margin: 22px auto 16px; }
+    #halloweenWheelGraphic {
+      width: 100%; height: 100%; border: 8px solid #b45b2a; border-radius: 50%;
+      background: conic-gradient(from -90deg, #ed7d31 0deg 25.2deg, #30223a 25.2deg 360deg);
+      box-shadow: 0 0 0 4px #f4d6a5, 0 10px 28px rgba(0,0,0,0.5);
+      transform: rotate(0deg); will-change: transform;
+    }
+    #halloweenWheelGraphic::after {
+      content: ''; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px;
+      border: 4px solid #f4d6a5; border-radius: 50%; background: #713b78;
+      transform: translate(-50%, -50%);
+    }
+    #halloweenWheelPointer {
+      position: absolute; z-index: 1; left: 50%; top: -8px; width: 0; height: 0;
+      border-left: 14px solid transparent; border-right: 14px solid transparent;
+      border-top: 28px solid #ffe36e; transform: translateX(-50%);
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.7));
+    }
+    #halloweenWheelLegend { display: grid; gap: 7px; text-align: left; font-size: 13px; }
+    .halloweenWheelLegendItem { display: flex; align-items: center; gap: 8px; }
+    .halloweenWheelSwatch { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 3px; }
+    #halloweenWheelMessage { min-height: 24px; margin-top: 14px; font-weight: 700; }
+    #halloweenWheelResult { min-height: 48px; margin-top: 8px; color: #ffad52; font-size: 18px; font-weight: 800; white-space: pre-line; }
+    #halloweenSpinButton { width: 100%; margin-top: 10px; background: #b45b2a; color: #fff; }
+    #halloweenSpinCloseButton { margin-top: 10px; }
 
     /* Luck Upgrades Modal */
     #luckModal {
@@ -326,7 +394,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-09-19 @3:17 PM: Music for IOS and mobile is now abailable! Added Low Data Mode and added a settings menu + more!" </p>
+    <p class="changelog">Changelogs: 2026-10-27 @9:15 AM: Spooky Halloween theme, new limited spin wheel + more! </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original<small class="modeReviveCount" id="originalReviveButtonCount"></small></button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)<small class="modeReviveCount" id="escapeReviveButtonCount"></small></button>
@@ -365,6 +433,7 @@
 
     <div style="text-align: center; margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
       <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
+      <button id="halloweenWheelButton">🎃 Halloween Spin (7 Coins)</button>
       <button id="musicCrateButton" style="display: inline-block;">Settings</button>
       <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 0;">💎 Spin Luck Upgrades</button>
     </div>
@@ -377,8 +446,20 @@
       <select id="adminThemeSelect">
         <option value="regular">Regular</option>
         <option value="christmas">Christmas</option>
+        <option value="halloween">Halloween</option>
       </select>
       <div id="adminThemeStatus" aria-live="polite"></div>
+      <section id="specialSpinAdminSection" aria-labelledby="specialSpinAdminHeading">
+        <h3 id="specialSpinAdminHeading">Special Spin Wheel</h3>
+        <label id="specialSpinEnabledLabel">
+          <input type="checkbox" id="specialSpinEnabledToggle">
+          Enable Free Halloween Chocolate spin
+        </label>
+        <div class="hint">The Halloween wheel has a 7% chocolate chance and costs 7 coins per spin.</div>
+        <div id="specialSpinStatus" aria-live="polite"></div>
+        <h4 style="margin:14px 0 6px;">Recent winners</h4>
+        <div id="specialSpinWinnerList" aria-live="polite">Open the admin panel to load winners.</div>
+      </section>
       <button id="adminThemeClose" class="menuBtn secondary" style="margin-top:12px;">Close</button>
     </div>
   </div>
@@ -393,6 +474,25 @@
       </div>
       <div id="wheelResult"></div>
       <button id="wheelCloseBtn">Close</button>
+    </div>
+  </div>
+
+  <div id="halloweenWheelModal" role="dialog" aria-modal="true" aria-labelledby="halloweenWheelHeading">
+    <div id="halloweenWheelContent">
+      <h2 id="halloweenWheelHeading">Halloween Spin Wheel</h2>
+      <div>Each spin costs 7 coins.</div>
+      <div id="halloweenWheelStage" aria-label="Halloween prize wheel">
+        <div id="halloweenWheelPointer" aria-hidden="true"></div>
+        <div id="halloweenWheelGraphic" aria-hidden="true"></div>
+      </div>
+      <div id="halloweenWheelLegend">
+        <div class="halloweenWheelLegendItem"><span class="halloweenWheelSwatch" style="background:#30223a;"></span>Nothing (93%)</div>
+        <div class="halloweenWheelLegendItem"><span class="halloweenWheelSwatch" style="background:#ed7d31;"></span>Free Halloween Chocolate (7%)</div>
+      </div>
+      <div id="halloweenWheelMessage" aria-live="polite">Ready to spin?</div>
+      <div id="halloweenWheelResult" aria-live="polite"></div>
+      <button id="halloweenSpinButton" class="menuBtn tertiary">Spin for 7 Coins</button>
+      <button id="halloweenSpinCloseButton" class="menuBtn secondary">Close</button>
     </div>
   </div>
 
@@ -432,6 +532,7 @@
           <button class="luckUpgradeBtn" id="buyLuck1" style="display: none;">Buy Luck 1 (50 coins)</button>
           <button class="luckUpgradeBtn" id="buyLuck2" style="display: none;">Buy Luck 2 (120 coins)</button>
           <button class="luckUpgradeBtn" id="buyLuck3" style="display: none;">Buy Luck 3 (300 coins)</button>
+          <button class="luckUpgradeBtn" id="buyLuck4" style="display: none;">Buy Luck 4 (600 coins)</button>
         </div>
         <div class="hint">Once purchased, luck upgrades are permanent and improve your spin luck nick ga.</div>
       </div>
@@ -513,7 +614,7 @@
     /* ----------------- Firebase setup with Auth ----------------- */
     import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAnalytics }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, addDoc, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       getAuth,
       createUserWithEmailAndPassword,
@@ -562,6 +663,9 @@
     const adminThemeSelect = document.getElementById('adminThemeSelect');
     const adminThemeStatus = document.getElementById('adminThemeStatus');
     const adminThemeClose = document.getElementById('adminThemeClose');
+    const specialSpinEnabledToggle = document.getElementById('specialSpinEnabledToggle');
+    const specialSpinStatus = document.getElementById('specialSpinStatus');
+    const specialSpinWinnerList = document.getElementById('specialSpinWinnerList');
     const globalSnakeEl = document.getElementById("globalSnake");
     const snakeBoard = document.getElementById('snakeBoard');
     const snakeControls = document.getElementById('snakeControls');
@@ -590,6 +694,13 @@
 
     // Wheel UI
     const wheelButton = document.getElementById("wheelButton");
+    const halloweenWheelButton = document.getElementById('halloweenWheelButton');
+    const halloweenWheelModal = document.getElementById('halloweenWheelModal');
+    const halloweenWheelGraphic = document.getElementById('halloweenWheelGraphic');
+    const halloweenWheelMessage = document.getElementById('halloweenWheelMessage');
+    const halloweenWheelResult = document.getElementById('halloweenWheelResult');
+    const halloweenSpinButton = document.getElementById('halloweenSpinButton');
+    const halloweenSpinCloseButton = document.getElementById('halloweenSpinCloseButton');
     const musicCrateButton = document.getElementById("musicCrateButton");
     const wheelModal = document.getElementById("wheelModal");
     const wheelCloseBtn = document.getElementById("wheelCloseBtn");
@@ -613,13 +724,23 @@
     const buyLuck1Btn = document.getElementById('buyLuck1');
     const buyLuck2Btn = document.getElementById('buyLuck2');
     const buyLuck3Btn = document.getElementById('buyLuck3');
+    const buyLuck4Btn = document.getElementById('buyLuck4');
 
     const GAME_THEME_REF = doc(db, 'globalSettings', 'gameTheme');
+    const SPECIAL_SPIN_SETTINGS_REF = doc(db, 'globalSettings', 'specialSpinWheel');
+    const SPECIAL_SPIN_WINNERS_REF = collection(db, 'specialSpinWinners');
+    const SPECIAL_SPIN_CHANCE = 0.07;
+    const HALLOWEEN_SPIN_COST = 7;
     let activeTheme = 'regular';
+    let specialSpinEnabled = false;
+    let specialSpinWinnersUnsubscribe = null;
+    let halloweenSpinInProgress = false;
+    let halloweenWheelRotation = 0;
 
     function applyTheme(theme) {
-      activeTheme = theme === 'christmas' ? 'christmas' : 'regular';
+      activeTheme = ['christmas', 'halloween'].includes(theme) ? theme : 'regular';
       document.body.classList.toggle('christmas', activeTheme === 'christmas');
+      document.body.classList.toggle('halloween', activeTheme === 'halloween');
       if (adminThemeSelect) adminThemeSelect.value = activeTheme;
     }
 
@@ -631,9 +752,73 @@
       if (adminThemeStatus) adminThemeStatus.textContent = 'Could not load the shared theme setting.';
     });
 
+    onSnapshot(SPECIAL_SPIN_SETTINGS_REF, (snapshot) => {
+      specialSpinEnabled = snapshot.exists() && snapshot.data().enabled === true;
+      if (specialSpinEnabledToggle) specialSpinEnabledToggle.checked = specialSpinEnabled;
+      updateHalloweenWheelButtonState();
+    }, (error) => {
+      console.error('Failed to listen for special spin setting:', error);
+      if (specialSpinStatus) specialSpinStatus.textContent = 'Could not load the special spin setting.';
+    });
+
+    async function saveSpecialSpinSetting(enabled) {
+      if (currentUsername !== 'admin') {
+        specialSpinEnabledToggle.checked = specialSpinEnabled;
+        return;
+      }
+      const previousEnabled = specialSpinEnabled;
+      specialSpinStatus.textContent = 'Saving setting...';
+      try {
+        await setDoc(SPECIAL_SPIN_SETTINGS_REF, { enabled }, { merge: true });
+        specialSpinEnabled = enabled;
+        specialSpinEnabledToggle.checked = enabled;
+        updateHalloweenWheelButtonState();
+        specialSpinStatus.textContent = enabled ? 'Special Spin Wheel enabled.' : 'Special Spin Wheel disabled.';
+      } catch (error) {
+        console.error('Failed to save special spin setting:', error);
+        specialSpinEnabled = previousEnabled;
+        specialSpinEnabledToggle.checked = previousEnabled;
+        specialSpinStatus.textContent = 'Could not save. Check Firestore permissions.';
+      }
+    }
+
+    function subscribeToSpecialSpinWinners() {
+      if (currentUsername !== 'admin') return;
+      if (specialSpinWinnersUnsubscribe) specialSpinWinnersUnsubscribe();
+      specialSpinWinnerList.textContent = 'Loading winners...';
+      const winnersQuery = query(SPECIAL_SPIN_WINNERS_REF, orderBy('wonAt', 'desc'), limit(20));
+      specialSpinWinnersUnsubscribe = onSnapshot(winnersQuery, (snapshot) => {
+        specialSpinWinnerList.replaceChildren();
+        if (snapshot.empty) {
+          specialSpinWinnerList.textContent = 'No special spin winners yet.';
+          return;
+        }
+        snapshot.forEach((winnerDoc) => {
+          const winner = winnerDoc.data();
+          const entry = document.createElement('div');
+          entry.className = 'specialSpinWinner';
+          const wonAt = Number(winner.wonAt);
+          const wonAtLabel = Number.isFinite(wonAt) ? new Date(wonAt).toLocaleString() : 'Time unavailable';
+          entry.textContent = `${winner.username || 'Unknown player'} - ${wonAtLabel}`;
+          specialSpinWinnerList.appendChild(entry);
+        });
+      }, (error) => {
+        console.error('Failed to load special spin winners:', error);
+        specialSpinWinnerList.textContent = 'Could not load winners. Check Firestore permissions.';
+      });
+    }
+
+    function closeAdminPanel() {
+      adminThemeModal.style.display = 'none';
+      if (specialSpinWinnersUnsubscribe) {
+        specialSpinWinnersUnsubscribe();
+        specialSpinWinnersUnsubscribe = null;
+      }
+    }
+
     async function saveGlobalTheme(theme) {
       if (currentUsername !== 'admin') return;
-      const selectedTheme = theme === 'christmas' ? 'christmas' : 'regular';
+      const selectedTheme = ['christmas', 'halloween'].includes(theme) ? theme : 'regular';
       const previousTheme = activeTheme;
       applyTheme(selectedTheme);
       adminThemeStatus.textContent = 'Saving theme...';
@@ -651,12 +836,16 @@
       if (currentUsername !== 'admin') return;
       adminThemeSelect.value = activeTheme;
       adminThemeStatus.textContent = '';
+      specialSpinStatus.textContent = '';
+      specialSpinEnabledToggle.checked = specialSpinEnabled;
       adminThemeModal.style.display = 'flex';
+      subscribeToSpecialSpinWinners();
     });
     adminThemeSelect.addEventListener('change', () => saveGlobalTheme(adminThemeSelect.value));
-    adminThemeClose.addEventListener('click', () => { adminThemeModal.style.display = 'none'; });
+    specialSpinEnabledToggle.addEventListener('change', () => saveSpecialSpinSetting(specialSpinEnabledToggle.checked));
+    adminThemeClose.addEventListener('click', closeAdminPanel);
     adminThemeModal.addEventListener('click', (event) => {
-      if (event.target === adminThemeModal) adminThemeModal.style.display = 'none';
+      if (event.target === adminThemeModal) closeAdminPanel();
     });
 
     let currentUser = null;
@@ -666,17 +855,18 @@
     let currentLuckLevel = 0;
     let coinsAwardedThisRun = false;
     const COIN_SPIN_COST = 20;
-    const MAX_LUCK_LEVEL = 3;
+    const MAX_LUCK_LEVEL = 4;
     /*
      * EDIT LUCK VALUES HERE
      * Chances use decimals: 0.10 = 10%, 0.25 = 25%.
-     * Each entry is Luck Level 0, 1, 2, then 3.
+    * Each entry is Luck Level 0 through 4.
      */
     const EDITABLE_LUCK_LEVELS = [
       { cost: 0,   reviveChance: 0.08, tripleChance: 0.02 },
       { cost: 50,  reviveChance: 0.10, tripleChance: 0.03 },
       { cost: 120, reviveChance: 0.13, tripleChance: 0.05 },
-      { cost: 300, reviveChance: 0.38, tripleChance: 0.07 }
+      { cost: 300, reviveChance: 0.38, tripleChance: 0.07 },
+      { cost: 600, reviveChance: 0.45, tripleChance: 0.10 }
     ];
     const LUCK_COSTS = EDITABLE_LUCK_LEVELS.map(level => level.cost);
     const LUCK_SETTINGS = EDITABLE_LUCK_LEVELS.map(level => ({
@@ -839,13 +1029,14 @@
     }
 
     function updateLuckUI() {
-      if (!luckStatusDisplay || !buyLuck1Btn || !buyLuck2Btn || !buyLuck3Btn) return;
+      if (!luckStatusDisplay || !buyLuck1Btn || !buyLuck2Btn || !buyLuck3Btn || !buyLuck4Btn) return;
 
       if (!currentUser) {
         luckStatusDisplay.textContent = 'Sign in to unlock luck upgrades.';
         buyLuck1Btn.style.display = 'none';
         buyLuck2Btn.style.display = 'none';
         buyLuck3Btn.style.display = 'none';
+        buyLuck4Btn.style.display = 'none';
         return;
       }
 
@@ -854,14 +1045,17 @@
       buyLuck1Btn.style.display = 'block';
       buyLuck2Btn.style.display = 'block';
       buyLuck3Btn.style.display = 'block';
+      buyLuck4Btn.style.display = 'block';
 
       buyLuck1Btn.textContent = currentLuckLevel >= 1 ? 'Luck 1 Owned' : `Buy Luck 1 (${LUCK_COSTS[1]} coins)`;
       buyLuck2Btn.textContent = currentLuckLevel >= 2 ? 'Luck 2 Owned' : `Buy Luck 2 (${LUCK_COSTS[2]} coins)`;
       buyLuck3Btn.textContent = currentLuckLevel >= 3 ? 'Luck 3 Owned' : `Buy Luck 3 (${LUCK_COSTS[3]} coins)`;
+      buyLuck4Btn.textContent = currentLuckLevel >= 4 ? 'Luck 4 Owned' : `Buy Luck 4 (${LUCK_COSTS[4]} coins)`;
 
       buyLuck1Btn.disabled = currentLuckLevel >= 1 || currentCoins < LUCK_COSTS[1];
       buyLuck2Btn.disabled = currentLuckLevel >= 2 || currentCoins < LUCK_COSTS[2];
       buyLuck3Btn.disabled = currentLuckLevel >= 3 || currentCoins < LUCK_COSTS[3];
+      buyLuck4Btn.disabled = currentLuckLevel >= 4 || currentCoins < LUCK_COSTS[4];
     }
 
     function updateAuthUI() {
@@ -893,6 +1087,7 @@
         updateLuckUI();
       }
       updateReviveInventoryUI();
+      updateHalloweenWheelButtonState();
     }
 
     async function handleAuthSignUp() {
@@ -1035,17 +1230,16 @@
     function getWheelSegments() {
       const level = Math.max(0, Math.min(MAX_LUCK_LEVEL, currentLuckLevel || 0));
       const settings = LUCK_SETTINGS[level];
-      return [
+      const segments = [
         { label: 'Revive', chance: settings.reviveChance, type: 'revive_original' },
         { label: '3 Revives', chance: settings.tripleChance, type: 'triple_revive' },
         { label: 'Nothing', chance: Math.max(0, 1 - settings.reviveChance - settings.tripleChance), type: 'nothing' }
       ];
+      return segments;
     }
 
-    function spinWheel() {
+    function spinWheel(segments) {
       return new Promise((resolve) => {
-        const segments = getWheelSegments();
-        
         // Weighted selection based on `chance` field
         const totalChance = segments.reduce((s, seg) => s + (seg.chance || 0), 0);
         let r = Math.random() * totalChance;
@@ -1090,6 +1284,7 @@
         'revive_original': { name: 'Revive', desc: 'Revive once in Original mode!' },
         'triple_revive': { name: 'Triple Revive', desc: '3 revives for Escape mode!' },
         'music_crate': { name: 'Music Crate', desc: 'Use your crate to unlock a music track!' },
+        'free_halloween_chocolate': { name: 'Free Halloween Chocolate', desc: 'You get free chocolate next YE!' },
         'nothing': { name: 'Nothing', desc: 'Better luck next time, nikka!' }
       };
       return prizeMap[prizeType] || { name: 'Unknown', desc: '' };
@@ -1182,6 +1377,15 @@
       }
       updateLuckUI();
       updateMusicCrateButtonState();
+      updateHalloweenWheelButtonState();
+    }
+
+    function updateHalloweenWheelButtonState() {
+      if (!halloweenWheelButton) return;
+      const available = Boolean(currentUser && specialSpinEnabled);
+      halloweenWheelButton.style.display = available ? 'inline-block' : 'none';
+      halloweenWheelButton.disabled = !available || halloweenSpinInProgress || currentCoins < HALLOWEEN_SPIN_COST;
+      halloweenWheelButton.textContent = `🎃 Halloween Spin (${HALLOWEEN_SPIN_COST} Coins)`;
     }
 
     let coinNotificationTimeout = null;
@@ -1330,8 +1534,8 @@
       wheelMessage.textContent = freeSpin ? 'Spinning...' : 'Spinning (paid spin)...';
       wheelResult.textContent = '';
 
-      const selectedIndex = await spinWheel();
       const segments = getWheelSegments();
+      const selectedIndex = await spinWheel(segments);
       const selectedSegment = segments[selectedIndex];
       const prize = awardPrize(selectedSegment.type);
 
@@ -1363,6 +1567,70 @@
       await updateWheelButtonState();
     }
 
+    async function rotateHalloweenWheel(chocolateWon) {
+      const chocolateArc = SPECIAL_SPIN_CHANCE * 360;
+      const targetAngle = chocolateWon
+        ? 360 - chocolateArc / 2
+        : 360 - (chocolateArc + (360 - chocolateArc) / 2);
+      const currentAngle = halloweenWheelRotation % 360;
+      const targetAdjustment = (targetAngle - currentAngle + 360) % 360;
+      halloweenWheelRotation += (5 + Math.floor(Math.random() * 3)) * 360 + targetAdjustment;
+
+      halloweenWheelGraphic.style.transition = 'none';
+      halloweenWheelGraphic.style.transform = `rotate(${currentAngle}deg)`;
+      void halloweenWheelGraphic.offsetWidth;
+      halloweenWheelGraphic.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.72, 0.12, 1)';
+      halloweenWheelGraphic.style.transform = `rotate(${halloweenWheelRotation}deg)`;
+      await new Promise(resolve => setTimeout(resolve, 4600));
+    }
+
+    async function handleHalloweenWheelSpin() {
+      if (!currentUser || !specialSpinEnabled || halloweenSpinInProgress) return;
+      halloweenSpinInProgress = true;
+      halloweenSpinButton.disabled = true;
+      halloweenSpinCloseButton.disabled = true;
+      updateHalloweenWheelButtonState();
+
+      try {
+        await loadWheelData();
+        if (!currentUser || !specialSpinEnabled) return;
+        if (currentCoins < HALLOWEEN_SPIN_COST) {
+          showCoinNotification(`Not enough coins. Halloween spins cost ${HALLOWEEN_SPIN_COST} coins.`);
+          return;
+        }
+
+        currentCoins -= HALLOWEEN_SPIN_COST;
+        updateCoinUI();
+        await saveUserCoinBalance(currentCoins);
+
+        const chocolateWon = Math.random() < SPECIAL_SPIN_CHANCE;
+        halloweenWheelMessage.textContent = 'Spinning...';
+        halloweenWheelResult.textContent = '';
+        await rotateHalloweenWheel(chocolateWon);
+
+        const prize = awardPrize(chocolateWon ? 'free_halloween_chocolate' : 'nothing');
+        halloweenWheelMessage.textContent = chocolateWon ? 'You won!' : 'Spin complete';
+        halloweenWheelResult.textContent = `${prize.name}\n${prize.desc}`;
+
+        if (chocolateWon) {
+          try {
+            await addDoc(SPECIAL_SPIN_WINNERS_REF, {
+              uid: currentUser.uid,
+              username: currentUsername || currentUser.displayName || 'Unknown player',
+              wonAt: Date.now()
+            });
+          } catch (error) {
+            console.error('Failed to record special spin winner:', error);
+          }
+        }
+      } finally {
+        halloweenSpinInProgress = false;
+        halloweenSpinButton.disabled = false;
+        halloweenSpinCloseButton.disabled = false;
+        updateHalloweenWheelButtonState();
+      }
+    }
+
     async function purchaseLuckLevel(level) {
       if (!currentUser) return;
       const targetLevel = Math.max(0, Math.min(MAX_LUCK_LEVEL, level));
@@ -1384,6 +1652,7 @@
     buyLuck1Btn.addEventListener('click', () => purchaseLuckLevel(1));
     buyLuck2Btn.addEventListener('click', () => purchaseLuckLevel(2));
     buyLuck3Btn.addEventListener('click', () => purchaseLuckLevel(3));
+    buyLuck4Btn.addEventListener('click', () => purchaseLuckLevel(4));
 
     function canLoadMusic() {
       return !lowDataMode || includeMusicWhenLowData;
@@ -1546,6 +1815,17 @@
     });
 
     wheelButton.addEventListener('click', handleWheelSpin);
+    halloweenWheelButton.addEventListener('click', () => {
+      if (!currentUser || !specialSpinEnabled) return;
+      halloweenWheelMessage.textContent = 'Each spin costs 7 coins.';
+      halloweenWheelResult.textContent = '';
+      halloweenWheelModal.style.display = 'flex';
+      updateHalloweenWheelButtonState();
+    });
+    halloweenSpinButton.addEventListener('click', handleHalloweenWheelSpin);
+    halloweenSpinCloseButton.addEventListener('click', () => {
+      if (!halloweenSpinInProgress) halloweenWheelModal.style.display = 'none';
+    });
     musicCrateButton.addEventListener('click', openMusicCrateMenu);
     equipMusicHavaBtn.addEventListener('click', () => equipMusicTrack('havanagila'));
     equipMusicWellBtn.addEventListener('click', () => equipMusicTrack('wellwellwell'));
@@ -1559,6 +1839,12 @@
     wheelModal.addEventListener('click', (e) => {
       if (e.target === wheelModal) {
         wheelModal.style.display = 'none';
+      }
+    });
+
+    halloweenWheelModal.addEventListener('click', (event) => {
+      if (event.target === halloweenWheelModal && !halloweenSpinInProgress) {
+        halloweenWheelModal.style.display = 'none';
       }
     });
 
