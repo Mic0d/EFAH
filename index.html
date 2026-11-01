@@ -394,7 +394,7 @@
         <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
       </div>
     </div>
-    <p class="changelog">Changelogs: 2026-10-27 @9:15 AM: Spooky Halloween theme, new limited spin wheel + more! </p>
+    <p class="changelog">Changelogs: 2026-11-01 @11:57 AM: New email sign in method + more!! </p>
     <div class="menuButtons">
       <button class="menuBtn" id="playOriginal">Play Original<small class="modeReviveCount" id="originalReviveButtonCount"></small></button>
       <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)<small class="modeReviveCount" id="escapeReviveButtonCount"></small></button>
@@ -544,10 +544,13 @@
   <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
     <div style="background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 14px; padding: 24px; width: min(400px, 90vw); box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
       <h2 style="margin-top: 0; color: #fff; font-size: 20px;">Sign In / Sign Up</h2>
-      <label style="display: block; margin-top: 16px; color: #ddd; font-weight: 700; font-size: 14px;">Username</label>
-      <input id="authUsername" type="text" placeholder="Enter username" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
-      <label style="display: block; margin-top: 12px; color: #ddd; font-weight: 700; font-size: 14px;">Password</label>
-      <input id="authPassword" type="password" placeholder="Enter password" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <label for="authEmail" style="display: block; margin-top: 16px; color: #ddd; font-weight: 700; font-size: 14px;">Email</label>
+      <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <label for="authUsername" style="display: block; margin-top: 12px; color: #ddd; font-weight: 700; font-size: 14px;">Username</label>
+      <input id="authUsername" type="text" autocomplete="username" placeholder="Enter username" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <label for="authPassword" style="display: block; margin-top: 12px; color: #ddd; font-weight: 700; font-size: 14px;">Password</label>
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter password" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <div class="hint">New accounts need all three fields. Existing accounts must add and verify an email before playing.</div>
       <div id="authMessage" style="min-height: 20px; margin-top: 12px; color: #aaa; font-size: 12px;"></div>
       <div style="display: flex; gap: 8px; margin-top: 16px;">
         <button id="authSignUp" class="menuBtn primary" style="flex: 1; min-width: auto; padding: 12px;">Sign Up</button>
@@ -619,7 +622,10 @@
       getAuth,
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
+      sendEmailVerification,
+      verifyBeforeUpdateEmail,
       onAuthStateChanged,
+      reload,
       signOut,
       updateProfile
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -683,6 +689,7 @@
     // Auth UI
     const authBtn = document.getElementById("authBtn");
     const authModal = document.getElementById("authModal");
+    const authEmailInput = document.getElementById("authEmail");
     const authUsernameInput = document.getElementById("authUsername");
     const coinsDisplay = document.getElementById("coinsDisplay");
     const authPasswordInput = document.getElementById("authPassword");
@@ -853,6 +860,7 @@
     let userWheelData = null;
     let currentCoins = 0;
     let currentLuckLevel = 0;
+    let authFlowInProgress = false;
     let coinsAwardedThisRun = false;
     const COIN_SPIN_COST = 20;
     const MAX_LUCK_LEVEL = 4;
@@ -1018,10 +1026,11 @@
 
     function openAuthModal() {
       authModal.style.display = 'flex';
+      authEmailInput.value = '';
       authUsernameInput.value = '';
       authPasswordInput.value = '';
       showAuthMessage('');
-      authUsernameInput.focus();
+      authEmailInput.focus();
     }
 
     function closeAuthModal() {
@@ -1091,19 +1100,26 @@
     }
 
     async function handleAuthSignUp() {
+      const email = authEmailInput.value.trim().toLowerCase();
       const username = authUsernameInput.value.trim();
       const password = authPasswordInput.value;
 
-      if (!username || !password) {
-        showAuthMessage('Enter both username and password.', true);
+      if (!email || !username || !password) {
+        showAuthMessage('Enter your email, username, and password.', true);
+        return;
+      }
+      if (!authEmailInput.checkValidity()) {
+        showAuthMessage('Enter a valid email address.', true);
         return;
       }
 
-      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      authFlowInProgress = true;
+      let createdUser = null;
       try {
         showAuthMessage('Creating account...');
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        createdUser = user;
         await updateProfile(user, { displayName: username });
         await setDoc(doc(db, "users", user.uid), {
           username,
@@ -1111,34 +1127,108 @@
           coins: 0,
           luckLevel: 0
         });
-        showAuthMessage('Account created! Signed in.');
-        setTimeout(() => closeAuthModal(), 1000);
+        await sendEmailVerification(user);
+        await signOut(auth);
+        showAuthMessage('Account created. Check your email and verify it before signing in.');
       } catch (error) {
         console.error(error);
+        if (createdUser && auth.currentUser) {
+          try {
+            await signOut(auth);
+          } catch (signOutError) {
+            console.error('Could not sign out the unverified account:', signOutError);
+          }
+        }
         showAuthMessage(error.message || 'Sign up failed.', true);
+      } finally {
+        authFlowInProgress = false;
       }
     }
 
     async function handleAuthSignIn() {
+      const email = authEmailInput.value.trim().toLowerCase();
       const username = authUsernameInput.value.trim();
       const password = authPasswordInput.value;
 
       if (!username || !password) {
-        showAuthMessage('Enter both username and password.', true);
+        showAuthMessage('Enter your username and password.', true);
         return;
       }
 
-      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      if (email && !authEmailInput.checkValidity()) {
+        showAuthMessage('Enter a valid email address.', true);
+        return;
+      }
+
+      authFlowInProgress = true;
       try {
         showAuthMessage('Signing in...');
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const storedUsername = user.displayName || username;
+        let user = null;
+        let emailSignInError = null;
+
+        if (email) {
+          try {
+            user = (await signInWithEmailAndPassword(auth, email, password)).user;
+          } catch (error) {
+            emailSignInError = error;
+          }
+        }
+
+        if (!user) {
+          const legacyEmail = `${username.toLowerCase()}@hitlarapp.local`;
+          try {
+            user = (await signInWithEmailAndPassword(auth, legacyEmail, password)).user;
+          } catch (legacyError) {
+            throw emailSignInError || legacyError;
+          }
+        }
+
+        await reload(user);
+        const storedUsername = (user.displayName || '').trim();
+        if (storedUsername && storedUsername.toLowerCase() !== username.toLowerCase()) {
+          await signOut(auth);
+          showAuthMessage('That username does not match this account.', true);
+          return;
+        }
+
+        const isLegacyAccount = user.email.toLowerCase().endsWith('@hitlarapp.local');
+        if (isLegacyAccount) {
+          if (!email) {
+            await signOut(auth);
+            showAuthMessage('This account needs an email. Enter it above; you must verify it before playing.');
+            return;
+          }
+          try {
+            await verifyBeforeUpdateEmail(user, email);
+            showAuthMessage('Verification email sent. Click its link, then sign in with your email to play.');
+          } catch (error) {
+            console.error('Could not start email migration:', error);
+            showAuthMessage(error.message || 'Could not send the verification email.', true);
+          } finally {
+            await signOut(auth);
+          }
+          return;
+        }
+
+        if (!user.emailVerified) {
+          try {
+            await sendEmailVerification(user);
+          } catch (error) {
+            console.error('Could not resend verification email:', error);
+            showAuthMessage(error.message || 'Could not send the verification email.', true);
+          } finally {
+            await signOut(auth);
+          }
+          return;
+        }
+
         showAuthMessage('Signed in!');
-        setTimeout(() => closeAuthModal(), 1000);
+        setTimeout(() => closeAuthModal(), 1200);
       } catch (error) {
         console.error(error);
         showAuthMessage(error.message || 'Sign in failed.', true);
+      } finally {
+        authFlowInProgress = false;
       }
     }
 
@@ -1151,6 +1241,10 @@
       if (e.target === authModal) closeAuthModal();
     });
 
+    authEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') authUsernameInput.focus();
+    });
+
     authUsernameInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') authPasswordInput.focus();
     });
@@ -1160,6 +1254,30 @@
     });
 
     onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          await reload(user);
+        } catch (error) {
+          console.error('Could not refresh email verification status:', error);
+        }
+        const isLegacyAccount = user.email && user.email.toLowerCase().endsWith('@hitlarapp.local');
+        if (isLegacyAccount || !user.emailVerified) {
+          if (authFlowInProgress) return;
+          currentUser = null;
+          currentUsername = null;
+          userWheelData = null;
+          currentCoins = 0;
+          currentLuckLevel = 0;
+          updateAuthUI();
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Could not sign out an unverified account:', error);
+          }
+          return;
+        }
+      }
+
       currentUser = user;
       if (user) {
         currentUsername = user.displayName || user.email.split('@')[0];
